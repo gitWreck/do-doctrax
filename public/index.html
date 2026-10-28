@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CFNR DO-DocTrax — Document Tracking System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="brand-section">
+        <div class="brand-icon">
+          <!-- Institutional Tree/Shield SVG Icon -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/>
+            <path d="M12 7v10"/>
+            <path d="M9 11l3-4 3 4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">
+            CFNR DO-DocTrax
+            <span class="brand-badge">2025 LOGBOOK</span>
+          </div>
+          <div class="brand-subtitle">College of Forestry and Natural Resources — Dean's Office, UPLB</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-export-excel" class="btn btn-secondary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export Excel (.xlsx)
+        </button>
+
+        <button id="btn-new-record" class="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Log New Document
+        </button>
+      </div>
+    </header>
+
+    <!-- Operational Category Tabs -->
+    <nav class="category-nav">
+      <button class="nav-tab active" data-category="incoming_outgoing">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Incoming & Outgoing Docs
+        <span class="tab-badge" id="badge-incoming_outgoing">-</span>
+      </button>
+
+      <button class="nav-tab" data-category="email">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        Email Received
+        <span class="tab-badge" id="badge-email">-</span>
+      </button>
+
+      <button class="nav-tab" data-category="memo_external">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        University Memos & AO
+        <span class="tab-badge" id="badge-memo_external">-</span>
+      </button>
+
+      <button class="nav-tab" data-category="personnel">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Appointments, NOSA & HR
+        <span class="tab-badge" id="badge-personnel">-</span>
+      </button>
+
+      <button class="nav-tab" data-category="cfnr_memo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        CFNR Internal Memos
+        <span class="tab-badge" id="badge-cfnr_memo">-</span>
+      </button>
+
+      <button class="nav-tab" data-category="cfnr_ao">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        CFNR Admin Orders
+        <span class="tab-badge" id="badge-cfnr_ao">-</span>
+      </button>
+
+      <button class="nav-tab" data-category="ppmp">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="21" r="1"/>
+          <circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        PPMP Procurement
+        <span class="tab-badge" id="badge-ppmp">-</span>
+      </button>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main class="workspace-content">
+      
+      <!-- KPI Row -->
+      <section class="kpi-row">
+        <div class="kpi-card">
+          <span class="kpi-label">Active Category Total</span>
+          <span class="kpi-value" id="kpi-cat-total">0</span>
+          <span class="kpi-subtext">Registered transactions</span>
+        </div>
+
+        <div class="kpi-card">
+          <span class="kpi-label">Signed / Completed</span>
+          <span class="kpi-value" id="kpi-signed" style="color: #166534;">0</span>
+          <span class="kpi-subtext">Released or filed documents</span>
+        </div>
+
+        <div class="kpi-card">
+          <span class="kpi-label">For Review / Action</span>
+          <span class="kpi-value" id="kpi-pending" style="color: #854d0e;">0</span>
+          <span class="kpi-subtext">Currently pending review</span>
+        </div>
+
+        <div class="kpi-card">
+          <span class="kpi-label">Total System Transactions</span>
+          <span class="kpi-value" id="kpi-grand-total">0</span>
+          <span class="kpi-subtext">Across all 2025 logs</span>
+        </div>
+      </section>
+
+      <!-- Control Toolbar -->
+      <section class="control-toolbar">
+        <div class="filter-group">
+          <!-- Real-time search -->
+          <div class="search-input-wrapper">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="filter-search" class="input-text" placeholder="Search tracking #, name, keyword...">
+          </div>
+
+          <!-- Unit Filter -->
+          <select id="filter-unit" class="select-control">
+            <option value="">All Units</option>
+          </select>
+
+          <!-- Status Filter -->
+          <select id="filter-status" class="select-control">
+            <option value="">All Statuses</option>
+          </select>
+
+          <button id="btn-reset-filters" class="btn btn-ghost btn-sm" title="Reset all filters">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Reset
+          </button>
+        </div>
+
+        <div class="filter-actions">
+          <label style="font-size: 0.75rem; color: var(--text-muted);">Rows per page:</label>
+          <select id="page-limit" class="select-control" style="width: auto;">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Data Table View -->
+      <section class="table-wrapper">
+        <table class="data-table" id="main-data-table">
+          <thead id="table-head">
+            <!-- Rendered dynamically depending on active category -->
+          </thead>
+          <tbody id="table-body">
+            <!-- Records injected via JavaScript -->
+          </tbody>
+        </table>
+
+        <!-- Empty State Container -->
+        <div id="table-empty" class="empty-state" style="display: none;">
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+            <polyline points="13 2 13 9 20 9"/>
+          </svg>
+          <div style="font-weight: 600;">No matching records found</div>
+          <div style="font-size: 0.75rem; color: var(--text-faint);">Try adjusting your search terms or filters.</div>
+        </div>
+      </section>
+
+      <!-- Pagination -->
+      <footer class="pagination-bar">
+        <div id="pagination-info">Showing 0 of 0 records</div>
+        <div class="pagination-controls">
+          <button id="btn-first-page" class="btn btn-secondary btn-sm" title="First page">&laquo;</button>
+          <button id="btn-prev-page" class="btn btn-secondary btn-sm">Previous</button>
+          <span id="current-page-display" style="padding: 0 0.5rem; font-weight: 600;">Page 1</span>
+          <button id="btn-next-page" class="btn btn-secondary btn-sm">Next</button>
+          <button id="btn-last-page" class="btn btn-secondary btn-sm" title="Last page">&raquo;</button>
+        </div>
+      </footer>
+    </main>
+
+    <!-- Modal: Log / Edit Document -->
+    <div id="modal-document" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-document-title">Log New Document</h2>
+          <button class="btn btn-ghost btn-sm close-modal" data-modal="modal-document">&times;</button>
+        </div>
+        <form id="form-document">
+          <div class="modal-body" id="dynamic-form-fields">
+            <!-- Injected dynamically based on category -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary close-modal" data-modal="modal-document">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-save-document">Save Transaction</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: Quick Custody / Pick-up Stamper -->
+    <div id="modal-custody" class="modal-backdrop">
+      <div class="modal-card" style="max-width: 440px;">
+        <div class="modal-header">
+          <h2 class="modal-title">Quick Custody Pick-up Stamp</h2>
+          <button class="btn btn-ghost btn-sm close-modal" data-modal="modal-custody">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.8125rem; color: var(--text-muted);">
+            Stamp courier release and mark document as <strong>SIGNED / PICKED UP</strong>:
+          </p>
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label class="form-label">Released to / Courier:</label>
+            <select id="custody-courier-select" class="select-control">
+              <!-- Populated with common couriers: Kuya Paolo, Kuya Alberth, etc. -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Or Custom Name:</label>
+            <input type="text" id="custody-courier-custom" class="input-text" placeholder="e.g. Kuya Paolo (RA)">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary close-modal" data-modal="modal-custody">Cancel</button>
+          <button type="button" class="btn btn-accent" id="btn-apply-custody-stamp">Apply Stamp & Sign</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
