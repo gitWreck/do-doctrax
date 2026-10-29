@@ -8,15 +8,31 @@ Designed to replace cumbersome multi-sheet Excel workbooks with a fast, reliable
 
 ## Simple Setup Instructions (Beginner-Friendly)
 
-Follow these **4 simple steps** to set up and run DO-DocTrax on any Windows computer:
+Follow these simple steps to install and run DO-DocTrax on any Windows computer:
 
-### Step 1: Install Python (If not already installed)
-1. Download Python for Windows from [python.org](https://www.python.org/downloads/).
-2. During installation, **make sure to check the box:** `"Add Python to PATH"`.
+### Step 1: Download DO-DocTrax
+Choose one of the two options below:
+* **Option A (Direct Download ZIP):**  
+  Download link: https://github.com/gitWreck/do-doctrax/archive/refs/heads/main.zip  
+  *(Extract the downloaded ZIP file to your computer, e.g. `C:\devs\do-doctrax`)*
+* **Option B (Git Clone):**  
+  ```bash
+  git clone https://github.com/gitWreck/do-doctrax.git
+  cd do-doctrax
+  ```
+  Repository link: https://github.com/gitWreck/do-doctrax
 
 ---
 
-### Step 2: Install Excel Support (1 command)
+### Step 2: Install Python (If not already installed)
+1. Download Python for Windows:  
+   Download link: https://www.python.org/downloads/
+2. Run the installer.  
+   **IMPORTANT:** Check the box at the bottom that says **"Add python.exe to PATH"** before clicking Install Now.
+
+---
+
+### Step 3: Install Excel Support (1 command)
 Open Command Prompt (`cmd`) or PowerShell, and run:
 ```bash
 pip install openpyxl
@@ -25,8 +41,8 @@ pip install openpyxl
 
 ---
 
-### Step 3: Load the 2025 Excel Data (One-Time Setup)
-In your terminal, navigate to the project folder and run:
+### Step 4: Load the 2025 Excel Data (One-Time Setup)
+In Command Prompt or PowerShell inside the `do-doctrax` folder, run:
 ```bash
 python scripts/migrate_excel_to_sqlite.py
 ```
@@ -34,26 +50,27 @@ python scripts/migrate_excel_to_sqlite.py
 
 ---
 
-### Step 4: Create Desktop App Icon (One-Time Setup)
+### Step 5: Create Desktop App Icon (One-Time Setup)
 Run:
 ```bash
 python scripts/create_desktop_shortcut.py
 ```
-* This creates a **DO-DocTrax** icon right on your Windows Desktop.
+* This creates a **DO-DocTrax** shortcut icon right on your Windows Desktop.
 
 ---
 
-## Daily Use
+## Daily Use & Access Links
 
-### How to Start the App
-* **Simply double-click the "DO-DocTrax" icon on your Desktop.**
-* It starts the system invisibly in the background and opens your browser directly to:
-  **`http://localhost:8000`**
+### On Your Computer (Host)
+* **Start:** Double-click the **"DO-DocTrax"** icon on your Desktop (or run `launch.vbs` / `run.bat`).
+* **Web link:** http://localhost:8000
+* **Stop:** Double-click **`stop.bat`** in the project folder to shut down the background server.
 
-*(Alternatively, you can double-click `run.bat` inside the folder).*
-
-### How to Stop the App
-* Double-click **`stop.bat`** in the project folder to cleanly shut down the server.
+### On Other Computers (Colleagues on the same Wi-Fi / Office Network)
+* Keep DO-DocTrax running on your host computer.
+* Colleagues on the same Wi-Fi can open their browser and visit your network link:
+  * Network link: http://192.168.0.204:8000
+  *(Or click the **"Share on Wi-Fi"** button in your dashboard header to copy the link anytime).*
 
 ---
 
