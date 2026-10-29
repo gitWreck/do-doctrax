@@ -258,6 +258,22 @@ function setupEventListeners() {
     if (state.currentPage < state.totalPages) { state.currentPage = state.totalPages; loadDocuments(); }
   });
 
+  // Share Network URL
+  const btnShare = document.getElementById('btn-share-network');
+  if (btnShare) {
+    btnShare.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/network-info');
+        const data = await res.json();
+        const shareUrl = data.network_url || data.local_url;
+        await navigator.clipboard.writeText(shareUrl);
+        showToast(`Copied to clipboard: ${shareUrl}`, 'success');
+      } catch (err) {
+        showToast(`Colleagues can open: ${window.location.origin}`, 'info');
+      }
+    });
+  }
+
   // Export to Excel
   document.getElementById('btn-export-excel').addEventListener('click', () => {
     showToast('Generating official Excel export...', 'info');

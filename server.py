@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import sqlite3
+import socket
 import urllib.parse
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import datetime
@@ -13,9 +14,23 @@ DB_PATH = os.path.join(BASE_DIR, "doctrax.db")
 sys.path.insert(0, os.path.join(BASE_DIR, "scripts"))
 import export_sqlite_to_excel
 
+def get_local_ip():
+    """Discover the local LAN/Wi-Fi IP address of this machine."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.1)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=5000;")
     return conn
 
 # Category mappings
@@ -56,6 +71,8 @@ class DocTraxHandler(SimpleHTTPRequestHandler):
             self.handle_list_documents(query)
         elif path == "/api/export":
             self.handle_export()
+        elif path == "/api/network-info":
+            self.handle_network_info()
         else:
             # Fallback to static file serving
             super().do_GET()
@@ -130,6 +147,15 @@ class DocTraxHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     # API HANDLERS
+    def handle_network_info(self):
+        local_ip = get_local_ip()
+        self.send_json({
+            "local_url": f"http://localhost:{self.server.server_port}",
+            "network_url": f"http://{local_ip}:{self.server.server_port}" if local_ip != "127.0.0.1" else None,
+            "ip": local_ip,
+            "port": self.server.server_port
+        })
+
     def handle_lookups(self):
         conn = get_db()
         cur = conn.cursor()
@@ -382,13 +408,17 @@ class DocTraxHandler(SimpleHTTPRequestHandler):
             self.send_json({"error": str(e)}, 500)
 
 def run(port=8000):
-    server_address = ("127.0.0.1", port)
+    server_address = ("0.0.0.0", port)
     httpd = ThreadingHTTPServer(server_address, DocTraxHandler)
-    print(f"==================================================")
-    print(f"  DO-DocTrax: CFNR Document Tracking System")
-    print(f"  Server active at: http://localhost:{port}")
-    print(f"  Press Ctrl+C to stop.")
-    print(f"==================================================")
+    local_ip = get_local_ip()
+    print("==================================================")
+    print("  DO-DocTrax: CFNR Document Tracking System")
+    print(f"  Local Access:   http://localhost:{port}")
+    if local_ip != "127.0.0.1":
+        print(f"  Network Access: http://{local_ip}:{port}")
+        print("  (Share Network Access link with colleagues on your Wi-Fi)")
+    print("  Press Ctrl+C to stop.")
+    print("==================================================")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
