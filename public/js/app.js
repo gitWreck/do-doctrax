@@ -595,14 +595,14 @@ function initComboboxes(container) {
     const fieldDef = config ? config.fields.find(f => f.name === fieldName) : null;
     const allOptions = (fieldDef && state.lookups[fieldDef.lookup]) ? state.lookups[fieldDef.lookup] : [];
 
-    function renderOptions(filterText = '') {
+    function renderOptions(filterText = '', showAll = false) {
       const cleanFilter = filterText.toLowerCase().trim();
-      const filtered = cleanFilter
-        ? allOptions.filter(opt => String(opt).toLowerCase().includes(cleanFilter))
-        : allOptions;
+      const filtered = (showAll || !cleanFilter)
+        ? allOptions
+        : allOptions.filter(opt => String(opt).toLowerCase().includes(cleanFilter));
 
       if (filtered.length === 0) {
-        dropdown.innerHTML = `<div class="combobox-empty">Custom: "<strong>${escapeHtml(filterText)}</strong>"</div>`;
+        dropdown.innerHTML = `<div class="combobox-empty">Use custom: "<strong>${escapeHtml(filterText)}</strong>"</div>`;
       } else {
         dropdown.innerHTML = filtered.map(opt => {
           const isSelected = String(opt).toLowerCase() === input.value.toLowerCase().trim();
@@ -621,9 +621,11 @@ function initComboboxes(container) {
       }
     }
 
-    function openDropdown() {
-      renderOptions(input.value);
+    function openDropdown(showAll = false) {
+      renderOptions(input.value, showAll);
       dropdown.style.display = 'block';
+      const sel = dropdown.querySelector('.combobox-item.selected');
+      if (sel) sel.scrollIntoView({ block: 'nearest' });
     }
 
     function closeDropdown() {
@@ -638,16 +640,16 @@ function initComboboxes(container) {
         closeDropdown();
       } else {
         input.focus();
-        openDropdown();
+        openDropdown(true);
       }
     });
 
     input.addEventListener('focus', () => {
-      openDropdown();
+      openDropdown(true);
     });
 
     input.addEventListener('input', () => {
-      openDropdown();
+      openDropdown(false);
     });
 
     input.addEventListener('blur', () => {
@@ -727,13 +729,10 @@ function openDocumentModal(record = null, isClone = false) {
     html += `<label class="form-label">${f.label}</label>`;
 
     if (f.type === 'combobox') {
-      const options = state.lookups[f.lookup] || [];
-      const listId = `datalist-${f.name}`;
       html += `
         <div class="combobox-wrapper" data-combobox-field="${f.name}">
           <input type="text" 
                  name="${f.name}" 
-                 list="${listId}" 
                  class="input-text combobox-input" 
                  value="${escapeHtml(val)}" 
                  placeholder="${f.placeholder || 'Type or select ' + f.label + '...'}" 
@@ -741,9 +740,6 @@ function openDocumentModal(record = null, isClone = false) {
           <button type="button" class="combobox-toggle" tabindex="-1" title="Show suggestions">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
-          <datalist id="${listId}">
-            ${options.map(opt => `<option value="${escapeHtml(opt)}">`).join('')}
-          </datalist>
           <div class="combobox-dropdown" style="display: none;"></div>
         </div>`;
     } else if (f.type === 'select') {
