@@ -11,6 +11,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIR = os.path.join(BASE_DIR, "public")
 DB_PATH = os.path.join(BASE_DIR, "doctrax.db")
 
+# Ensure valid stdout/stderr handles under pythonw (windowless execution)
+if sys.stdout is None:
+    try:
+        sys.stdout = open(os.devnull, "w")
+    except Exception:
+        pass
+if sys.stderr is None:
+    try:
+        sys.stderr = open(os.devnull, "w")
+    except Exception:
+        pass
+
 sys.path.insert(0, os.path.join(BASE_DIR, "scripts"))
 import export_sqlite_to_excel
 
@@ -57,6 +69,14 @@ SEARCH_COLS = {
 class DocTraxHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=PUBLIC_DIR, **kwargs)
+
+    def log_message(self, format, *args):
+        # Silently ignore write errors under headless/pythonw execution
+        try:
+            if sys.stderr is not None:
+                sys.stderr.write("%s - - [%s] %s\n" % (self.address_string(), self.log_date_time_string(), format % args))
+        except Exception:
+            pass
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)

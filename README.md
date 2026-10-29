@@ -62,9 +62,16 @@ python scripts/create_desktop_shortcut.py
 ## Daily Use & Access Links
 
 ### On Your Computer (Host)
-* **Start:** Double-click the **"DO-DocTrax"** icon on your Desktop (or run `launch.vbs` / `run.bat`).
+* **Start:** Double-click the **"DO-DocTrax"** icon on your Desktop (or double-click `launch.vbs` or `run.bat`).
 * **Web link:** http://localhost:8000
 * **Stop:** Double-click **`stop.bat`** in the project folder to shut down the background server.
+
+> [!TIP]
+> **Windows 11 "Smart App Control blocked a file" message?**  
+> If Windows blocks `launch.vbs` because it was downloaded from the internet:
+> 1. Right-click `launch.vbs` → Select **Properties**.
+> 2. At the bottom under Security, check the **"Unblock"** box → Click **OK**.
+> 3. Alternatively, you can always double-click **`run.bat`** or run `python server.py`.
 
 ### On Other Computers (Colleagues on the same Wi-Fi / Office Network)
 * Keep DO-DocTrax running on your host computer.
