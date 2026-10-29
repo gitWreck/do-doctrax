@@ -208,6 +208,21 @@ class DocTraxHandler(SimpleHTTPRequestHandler):
             elif cat == "memo_type" and val not in lookups["memo_types"]:
                 lookups["memo_types"].append(val)
 
+        # Include all other distinct units found in existing records
+        try:
+            cur.execute("""
+                SELECT DISTINCT from_unit FROM incoming_outgoing_docs WHERE from_unit IS NOT NULL AND TRIM(from_unit) != ''
+                UNION
+                SELECT DISTINCT unit FROM personnel_appointments WHERE unit IS NOT NULL AND TRIM(unit) != ''
+                ORDER BY 1 ASC
+            """)
+            for r in cur.fetchall():
+                u = r[0].strip()
+                if u and u not in lookups["units"]:
+                    lookups["units"].append(u)
+        except Exception:
+            pass
+
         conn.close()
         self.send_json(lookups)
 

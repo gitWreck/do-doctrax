@@ -43,8 +43,8 @@ const CATEGORY_CONFIG = {
     fields: [
       { name: 'date', label: 'Date', type: 'date', defaultToday: true },
       { name: 'doctrax_no', label: 'Doctrax Number', placeholder: 'e.g. 202501-J6O055' },
-      { name: 'from_unit', label: 'Originating Unit', type: 'select', lookup: 'units' },
-      { name: 'doc_type', label: 'Document Type', type: 'select', lookup: 'doc_types' },
+      { name: 'from_unit', label: 'Originating Unit', type: 'combobox', lookup: 'units', placeholder: 'Select or type unit...' },
+      { name: 'doc_type', label: 'Document Type', type: 'combobox', lookup: 'doc_types', placeholder: 'Select or type document type...' },
       { name: 'status', label: 'Review Status', type: 'select', lookup: 'statuses' },
       { name: 'received_by', label: 'Received by / Custody Stamp', placeholder: 'e.g. pick up by Kuya Paolo 01/03/2025' },
       { name: 'description', label: 'Subject / Description', type: 'textarea', colSpan: 2 },
@@ -109,7 +109,7 @@ const CATEGORY_CONFIG = {
     fields: [
       { name: 'date', label: 'Date Received', type: 'date', defaultToday: true },
       { name: 'to_person', label: 'Personnel / Faculty Name' },
-      { name: 'unit', label: 'CFNR Unit', type: 'select', lookup: 'units' },
+      { name: 'unit', label: 'CFNR Unit', type: 'combobox', lookup: 'units', placeholder: 'Select or type unit...' },
       { name: 'doc_type', label: 'Action Type', type: 'select', lookup: 'appointment_types' },
       { name: 'from_office', label: 'Issuing Office', placeholder: 'e.g. OVCA, OC, HRDO' },
       { name: 'doctrack_no', label: 'Doctrack No. (if any)' },
@@ -134,7 +134,7 @@ const CATEGORY_CONFIG = {
       { name: 'date', label: 'Issuance Date', type: 'date', defaultToday: true },
       { name: 'memo_no', label: 'CFNR Memo Number', placeholder: 'e.g. 243' },
       { name: 'recipient', label: 'Addressed To', placeholder: 'e.g. DR. ANALYN L. CODILAN' },
-      { name: 'unit_for_oic', label: 'Unit for OIC (if applicable)', type: 'select', lookup: 'units' },
+      { name: 'unit_for_oic', label: 'Unit for OIC (if applicable)', type: 'combobox', lookup: 'units', placeholder: 'Select or type unit...' },
       { name: 'description', label: 'Memorandum Subject / Text', type: 'textarea', colSpan: 2 },
       { name: 'remarks', label: 'Pickup / Transmission Remarks', type: 'textarea', colSpan: 2 }
     ]
@@ -572,6 +572,137 @@ function renderTableRows(records) {
 }
 
 // Modal handling
+// HTML Escaping Helper
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Initialize Comboboxes (Typable Dropdowns)
+function initComboboxes(container) {
+  container.querySelectorAll('.combobox-wrapper').forEach(wrapper => {
+    const input = wrapper.querySelector('.combobox-input');
+    const toggleBtn = wrapper.querySelector('.combobox-toggle');
+    const dropdown = wrapper.querySelector('.combobox-dropdown');
+    const fieldName = wrapper.dataset.comboboxField;
+
+    const config = CATEGORY_CONFIG[state.currentCategory];
+    const fieldDef = config ? config.fields.find(f => f.name === fieldName) : null;
+    const allOptions = (fieldDef && state.lookups[fieldDef.lookup]) ? state.lookups[fieldDef.lookup] : [];
+
+    function renderOptions(filterText = '') {
+      const cleanFilter = filterText.toLowerCase().trim();
+      const filtered = cleanFilter
+        ? allOptions.filter(opt => String(opt).toLowerCase().includes(cleanFilter))
+        : allOptions;
+
+      if (filtered.length === 0) {
+        dropdown.innerHTML = `<div class="combobox-empty">Custom: "<strong>${escapeHtml(filterText)}</strong>"</div>`;
+      } else {
+        dropdown.innerHTML = filtered.map(opt => {
+          const isSelected = String(opt).toLowerCase() === input.value.toLowerCase().trim();
+          return `<div class="combobox-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(opt)}">${escapeHtml(opt)}</div>`;
+        }).join('');
+
+        dropdown.querySelectorAll('.combobox-item').forEach(item => {
+          item.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            input.value = item.dataset.value;
+            closeDropdown();
+            input.focus();
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+        });
+      }
+    }
+
+    function openDropdown() {
+      renderOptions(input.value);
+      dropdown.style.display = 'block';
+    }
+
+    function closeDropdown() {
+      dropdown.style.display = 'none';
+      const active = dropdown.querySelector('.combobox-item.active');
+      if (active) active.classList.remove('active');
+    }
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (dropdown.style.display === 'block') {
+        closeDropdown();
+      } else {
+        input.focus();
+        openDropdown();
+      }
+    });
+
+    input.addEventListener('focus', () => {
+      openDropdown();
+    });
+
+    input.addEventListener('input', () => {
+      openDropdown();
+    });
+
+    input.addEventListener('blur', () => {
+      setTimeout(closeDropdown, 160);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        if (dropdown.style.display !== 'block') {
+          openDropdown();
+          return;
+        }
+        const items = dropdown.querySelectorAll('.combobox-item');
+        if (items.length > 0) {
+          const active = dropdown.querySelector('.combobox-item.active');
+          let nextIndex = 0;
+          if (active) {
+            active.classList.remove('active');
+            nextIndex = Array.from(items).indexOf(active) + 1;
+            if (nextIndex >= items.length) nextIndex = 0;
+          }
+          items[nextIndex].classList.add('active');
+          items[nextIndex].scrollIntoView({ block: 'nearest' });
+          e.preventDefault();
+        }
+      } else if (e.key === 'ArrowUp') {
+        if (dropdown.style.display === 'block') {
+          const items = dropdown.querySelectorAll('.combobox-item');
+          if (items.length > 0) {
+            const active = dropdown.querySelector('.combobox-item.active');
+            let prevIndex = items.length - 1;
+            if (active) {
+              active.classList.remove('active');
+              prevIndex = Array.from(items).indexOf(active) - 1;
+              if (prevIndex < 0) prevIndex = items.length - 1;
+            }
+            items[prevIndex].classList.add('active');
+            items[prevIndex].scrollIntoView({ block: 'nearest' });
+            e.preventDefault();
+          }
+        }
+      } else if (e.key === 'Enter') {
+        const active = dropdown.querySelector('.combobox-item.active');
+        if (active && dropdown.style.display === 'block') {
+          e.preventDefault();
+          input.value = active.dataset.value;
+          closeDropdown();
+        }
+      } else if (e.key === 'Escape') {
+        closeDropdown();
+      }
+    });
+  });
+}
+
 function openDocumentModal(record = null, isClone = false) {
   const modal = document.getElementById('modal-document');
   const title = document.getElementById('modal-document-title');
@@ -595,7 +726,27 @@ function openDocumentModal(record = null, isClone = false) {
     html += `<div class="form-group ${colClass}">`;
     html += `<label class="form-label">${f.label}</label>`;
 
-    if (f.type === 'select') {
+    if (f.type === 'combobox') {
+      const options = state.lookups[f.lookup] || [];
+      const listId = `datalist-${f.name}`;
+      html += `
+        <div class="combobox-wrapper" data-combobox-field="${f.name}">
+          <input type="text" 
+                 name="${f.name}" 
+                 list="${listId}" 
+                 class="input-text combobox-input" 
+                 value="${escapeHtml(val)}" 
+                 placeholder="${f.placeholder || 'Type or select ' + f.label + '...'}" 
+                 autocomplete="off">
+          <button type="button" class="combobox-toggle" tabindex="-1" title="Show suggestions">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <datalist id="${listId}">
+            ${options.map(opt => `<option value="${escapeHtml(opt)}">`).join('')}
+          </datalist>
+          <div class="combobox-dropdown" style="display: none;"></div>
+        </div>`;
+    } else if (f.type === 'select') {
       const options = state.lookups[f.lookup] || [];
       html += `<select name="${f.name}" class="select-control">`;
       html += `<option value="">-- Select ${f.label} --</option>`;
@@ -605,9 +756,9 @@ function openDocumentModal(record = null, isClone = false) {
       });
       html += `</select>`;
     } else if (f.type === 'textarea') {
-      html += `<textarea name="${f.name}" rows="2" class="input-text" placeholder="${f.placeholder || ''}">${val}</textarea>`;
+      html += `<textarea name="${f.name}" rows="2" class="input-text" placeholder="${f.placeholder || ''}">${escapeHtml(val)}</textarea>`;
     } else {
-      html += `<input type="${f.type || 'text'}" name="${f.name}" class="input-text" value="${val}" placeholder="${f.placeholder || ''}">`;
+      html += `<input type="${f.type || 'text'}" name="${f.name}" class="input-text" value="${escapeHtml(val)}" placeholder="${f.placeholder || ''}">`;
     }
 
     html += `</div>`;
@@ -615,6 +766,7 @@ function openDocumentModal(record = null, isClone = false) {
   html += '</div>';
 
   fieldsContainer.innerHTML = html;
+  initComboboxes(fieldsContainer);
   modal.classList.add('open');
 }
 
