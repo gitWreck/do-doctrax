@@ -659,11 +659,11 @@ function renderTableRows(records) {
           const stampBtn = document.createElement('button');
           stampBtn.className = 'btn btn-ghost btn-sm';
           stampBtn.title = 'One-click Pick-up Stamp';
+          stampBtn.setAttribute('aria-label', 'One-click Pick-up Stamp');
           stampBtn.innerHTML = `
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
-            Stamp
           `;
           stampBtn.onclick = () => openCustodyModal(rec.id);
           td.appendChild(stampBtn);
