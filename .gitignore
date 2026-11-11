@@ -16,6 +16,8 @@ __pycache__/
 
 # Environment & Virtual Environments
 .env
+.env.*
+client_secret_*.json
 .venv
 env/
 venv/

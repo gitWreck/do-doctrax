@@ -1,7 +1,106 @@
 /**
  * DO-DocTrax: CFNR Document Tracking Application
- * Client-Side Controller & Interface Manager
+ * Client-Side Controller & Interface Manager (Supabase Backend)
  */
+
+const TABLE_MAP = {
+  incoming_outgoing: 'incoming_outgoing_docs',
+  email: 'email_logs',
+  memo_external: 'memo_ao_external',
+  personnel: 'personnel_appointments',
+  cfnr_memo: 'cfnr_memos',
+  cfnr_ao: 'cfnr_admin_orders',
+  ppmp: 'ppmp_procurement'
+};
+
+const SEARCH_COLS = {
+  incoming_outgoing: ['doctrax_no', 'from_unit', 'doc_type', 'description', 'status', 'received_by', 'remarks'],
+  email: ['sender', 'doctrax_no', 'description', 'remarks'],
+  memo_external: ['sender', 'doc_type', 'memo_no', 'subject', 'remarks'],
+  personnel: ['doctrack_no', 'from_office', 'to_person', 'unit', 'doc_type', 'description', 'received_by', 'received_by_units'],
+  cfnr_memo: ['memo_no', 'recipient', 'unit_for_oic', 'description', 'remarks'],
+  cfnr_ao: ['ao_no', 'recipient', 'description', 'remarks'],
+  ppmp: ['description', 'doctrack_no', 'remarks']
+};
+
+const DEFAULT_COURIERS = [
+  'Kuya Paolo', 'Kuya Alberth', 'Kuya Emeng', 'Ms. April', 'John Ryan',
+  'Ms. Glenda', 'Ms. Barbie (RA)', 'Ms. Nelia', 'Kuya Willie', 'Ryan Zafra (RA)'
+];
+
+const EXCEL_SHEETS = [
+  {
+    title: 'INCOMING-OUTGOING DOCS',
+    table: 'incoming_outgoing_docs',
+    headers: ['ID', 'Date', 'Doctrax', 'From', 'Document Type', 'Description', 'Status', 'Received by', 'Remarks'],
+    columns: ['id', 'date', 'doctrax_no', 'from_unit', 'doc_type', 'description', 'status', 'received_by', 'remarks']
+  },
+  {
+    title: 'EMAIL RECEIVED',
+    table: 'email_logs',
+    headers: ['ID', 'Date', 'From', 'Doctrax', 'Description', 'Deadline/Link', 'Remarks'],
+    columns: ['id', 'date', 'sender', 'doctrax_no', 'description', 'deadline_link', 'remarks']
+  },
+  {
+    title: 'MEMO, AO RECEIVED IN EMAIL',
+    table: 'memo_ao_external',
+    headers: ['ID', 'Date', 'From', 'Document Type', 'Memo No.', 'Description / Subject', 'Remarks'],
+    columns: ['id', 'date', 'sender', 'doc_type', 'memo_no', 'subject', 'remarks']
+  },
+  {
+    title: 'APPOINTMENT, NOSA, ETC.',
+    table: 'personnel_appointments',
+    headers: ['ID', 'Date', 'Doctrack', 'From', 'To', 'Unit', 'Document Type', 'Description', 'Received by', 'Received by UNITS', 'Remarks'],
+    columns: ['id', 'date', 'doctrack_no', 'from_office', 'to_person', 'unit', 'doc_type', 'description', 'received_by', 'received_by_units', 'remarks']
+  },
+  {
+    title: 'CFNR MEMO',
+    table: 'cfnr_memos',
+    headers: ['ID', 'Date', 'CFNR Memo No.', 'To', 'UNIT FOR OIC', 'Document Description', 'Remarks'],
+    columns: ['id', 'date', 'memo_no', 'recipient', 'unit_for_oic', 'description', 'remarks']
+  },
+  {
+    title: 'CFNR ADMIN ORDER',
+    table: 'cfnr_admin_orders',
+    headers: ['ID', 'Date', 'CFNR AO No.', 'To', 'Document Description', 'Remarks'],
+    columns: ['id', 'date', 'ao_no', 'recipient', 'description', 'remarks']
+  },
+  {
+    title: 'OUT PPMP',
+    table: 'ppmp_procurement',
+    headers: ['ID', 'Date', 'Document Type/Description', 'Doctrack No.', 'Amount', 'Remarks'],
+    columns: ['id', 'date', 'description', 'doctrack_no', 'amount', 'remarks']
+  }
+];
+
+function getSupabaseClient() {
+  if (!window.docTraxAuth?.isAuthorized?.()) return null;
+  return window.docTraxAuth.supabase || null;
+}
+
+function getCurrentUserEmail() {
+  return window.docTraxAuth?.getSession?.()?.user?.email || null;
+}
+
+function canCurrentUserWrite() {
+  const role = window.docTraxAuth?.getProfile?.()?.role || 'staff';
+  return role === 'admin' || role === 'staff';
+}
+
+function handleSupabaseError(err, fallbackMsg) {
+  console.error(fallbackMsg, err);
+  const status = err?.status || err?.code;
+  if (status === 401 || status === 'PGRST301') {
+    showToast('Session expired. Please sign in again.', 'error');
+    window.docTraxAuth?.signOut?.();
+    return;
+  }
+  if (status === 403 || status === '42501') {
+    showToast('Permission denied by database access policy.', 'error');
+    return;
+  }
+  showToast(err?.message || fallbackMsg, 'error');
+}
 
 // Application State
 const state = {
@@ -177,13 +276,27 @@ const CATEGORY_CONFIG = {
   }
 };
 
-// Application Initialization
-document.addEventListener('DOMContentLoaded', async () => {
-  setupEventListeners();
+// Application Initialization (runs only after Auth Gate authorizes user)
+let appInitialized = false;
+
+async function initDocTraxApp() {
+  if (!appInitialized) {
+    setupEventListeners();
+    appInitialized = true;
+  }
+  const btnNewRecord = document.getElementById('btn-new-record');
+  if (btnNewRecord) {
+    btnNewRecord.hidden = !canCurrentUserWrite();
+  }
   await loadLookups();
   await loadStats();
   await loadDocuments();
-});
+}
+
+window.addEventListener('doctrax:authorized', initDocTraxApp);
+if (window.docTraxAuth?.isAuthorized?.()) {
+  initDocTraxApp();
+}
 
 // Event Listeners Setup
 function setupEventListeners() {
@@ -258,27 +371,8 @@ function setupEventListeners() {
     if (state.currentPage < state.totalPages) { state.currentPage = state.totalPages; loadDocuments(); }
   });
 
-  // Share Network URL
-  const btnShare = document.getElementById('btn-share-network');
-  if (btnShare) {
-    btnShare.addEventListener('click', async () => {
-      try {
-        const res = await fetch('/api/network-info');
-        const data = await res.json();
-        const shareUrl = data.network_url || data.local_url;
-        await navigator.clipboard.writeText(shareUrl);
-        showToast(`Copied to clipboard: ${shareUrl}`, 'success');
-      } catch (err) {
-        showToast(`Colleagues can open: ${window.location.origin}`, 'info');
-      }
-    });
-  }
-
-  // Export to Excel
-  document.getElementById('btn-export-excel').addEventListener('click', () => {
-    showToast('Generating official Excel export...', 'info');
-    window.location.href = '/api/export';
-  });
+  // Export to Excel (browser-side from authenticated Supabase queries)
+  document.getElementById('btn-export-excel').addEventListener('click', handleExportExcel);
 
   // Log New Document
   document.getElementById('btn-new-record').addEventListener('click', () => {
@@ -307,17 +401,49 @@ function setupEventListeners() {
   document.getElementById('btn-apply-custody-stamp').addEventListener('click', handleApplyCustodyStamp);
 }
 
-// Fetch lookups from API
+// Fetch lookups from Supabase
 async function loadLookups() {
+  const sb = getSupabaseClient();
+  if (!sb) return;
+
   try {
-    const res = await fetch('/api/lookups');
-    const data = await res.json();
-    state.lookups = data;
+    const { data: rows, error } = await sb
+      .from('lookup_values')
+      .select('category, value, sort_order')
+      .order('sort_order', { ascending: true })
+      .order('value', { ascending: true });
+
+    if (error) throw error;
+
+    const lookups = {
+      units: [],
+      doc_types: [],
+      statuses: [],
+      appointment_types: [],
+      memo_types: [],
+      couriers: [...DEFAULT_COURIERS]
+    };
+
+    (rows || []).forEach(r => {
+      if (r.category === 'unit' && !lookups.units.includes(r.value)) {
+        lookups.units.push(r.value);
+      } else if (r.category === 'doc_type' && !lookups.doc_types.includes(r.value)) {
+        lookups.doc_types.push(r.value);
+      } else if (r.category === 'status' && !lookups.statuses.includes(r.value)) {
+        lookups.statuses.push(r.value);
+      } else if (r.category === 'appointment_type' && !lookups.appointment_types.includes(r.value)) {
+        lookups.appointment_types.push(r.value);
+      } else if (r.category === 'memo_type' && !lookups.memo_types.includes(r.value)) {
+        lookups.memo_types.push(r.value);
+      }
+    });
+
+    state.lookups = lookups;
 
     // Populate Unit Filter
     const unitSelect = document.getElementById('filter-unit');
     unitSelect.innerHTML = '<option value="">All Units</option>';
-    data.units.forEach(u => {
+    lookups.units.forEach(u => {
       const opt = document.createElement('option');
       opt.value = u;
       opt.textContent = u;
@@ -327,7 +453,7 @@ async function loadLookups() {
     // Populate Status Filter
     const statusSelect = document.getElementById('filter-status');
     statusSelect.innerHTML = '<option value="">All Statuses</option>';
-    data.statuses.forEach(s => {
+    lookups.statuses.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s;
       opt.textContent = s;
@@ -337,41 +463,84 @@ async function loadLookups() {
     // Populate Custody Modal Courier select
     const courierSelect = document.getElementById('custody-courier-select');
     courierSelect.innerHTML = '';
-    data.couriers.forEach(c => {
+    lookups.couriers.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c;
       opt.textContent = c;
       courierSelect.appendChild(opt);
     });
   } catch (err) {
-    console.error('Failed to load lookups:', err);
+    handleSupabaseError(err, 'Failed to load lookup lists.');
   }
 }
 
-// Fetch operational stats & KPI counts
+// Fetch operational stats & KPI counts from Supabase
 async function loadStats() {
-  try {
-    const res = await fetch('/api/stats');
-    const data = await res.json();
-    state.stats = data;
+  const sb = getSupabaseClient();
+  if (!sb) return;
 
-    // Update Tab Badges
-    Object.keys(data.counts).forEach(k => {
+  try {
+    const categoryEntries = Object.entries(TABLE_MAP);
+    const countPromises = categoryEntries.map(([catKey, tableName]) =>
+      sb.from(tableName).select('id', { count: 'exact', head: true }).then(res => ({ catKey, res }))
+    );
+
+    const signedPromise = sb
+      .from('incoming_outgoing_docs')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['SIGNED', 'APPROVED']);
+
+    const pendingPromise = sb
+      .from('incoming_outgoing_docs')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['FOR REVIEW', 'FOR APPROPRIATE ACTION', 'FOR COMMENTS']);
+
+    const [catResults, signedRes, pendingRes] = await Promise.all([
+      Promise.all(countPromises),
+      signedPromise,
+      pendingPromise
+    ]);
+
+    const counts = {};
+    let totalAll = 0;
+    for (const { catKey, res } of catResults) {
+      if (res.error) throw res.error;
+      const c = res.count || 0;
+      counts[catKey] = c;
+      totalAll += c;
+    }
+
+    if (signedRes.error) throw signedRes.error;
+    if (pendingRes.error) throw pendingRes.error;
+
+    const signedCount = signedRes.count || 0;
+    const pendingCount = pendingRes.count || 0;
+
+    state.stats = {
+      total_all: totalAll,
+      counts,
+      signed_count: signedCount,
+      pending_count: pendingCount
+    };
+
+    Object.keys(counts).forEach(k => {
       const badge = document.getElementById(`badge-${k}`);
-      if (badge) badge.textContent = Number(data.counts[k]).toLocaleString();
+      if (badge) badge.textContent = Number(counts[k]).toLocaleString();
     });
 
-    // KPI Values
-    document.getElementById('kpi-grand-total').textContent = Number(data.total_all).toLocaleString();
-    document.getElementById('kpi-signed').textContent = Number(data.signed_count).toLocaleString();
-    document.getElementById('kpi-pending').textContent = Number(data.pending_count).toLocaleString();
+    document.getElementById('kpi-grand-total').textContent = Number(totalAll).toLocaleString();
+    document.getElementById('kpi-signed').textContent = Number(signedCount).toLocaleString();
+    document.getElementById('kpi-pending').textContent = Number(pendingCount).toLocaleString();
   } catch (err) {
-    console.error('Failed to load stats:', err);
+    handleSupabaseError(err, 'Failed to load KPI stats.');
   }
 }
 
 // Load Documents for current category, page, and filters
 async function loadDocuments() {
+  const sb = getSupabaseClient();
+  if (!sb) return;
+
   const tableBody = document.getElementById('table-body');
   const tableEmpty = document.getElementById('table-empty');
   tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 2rem; color: var(--text-faint);">Loading records...</td></tr>';
@@ -379,41 +548,64 @@ async function loadDocuments() {
 
   renderTableHeader();
 
-  const params = new URLSearchParams({
-    category: state.currentCategory,
-    page: state.currentPage,
-    limit: state.limit
-  });
-
-  if (state.searchQuery) params.append('search', state.searchQuery);
-  if (state.selectedUnit) params.append('unit', state.selectedUnit);
-  if (state.selectedStatus) params.append('status', state.selectedStatus);
+  const tableName = TABLE_MAP[state.currentCategory] || 'incoming_outgoing_docs';
+  const searchCols = SEARCH_COLS[state.currentCategory] || ['description'];
+  const fromIdx = (state.currentPage - 1) * state.limit;
+  const toIdx = fromIdx + state.limit - 1;
 
   try {
-    const res = await fetch(`/api/documents?${params.toString()}`);
-    const data = await res.json();
+    let query = sb
+      .from(tableName)
+      .select('*', { count: 'exact' });
 
-    state.totalRecords = data.total;
-    state.totalPages = data.total_pages;
+    if (state.searchQuery) {
+      const sanitized = state.searchQuery.replace(/"/g, '').trim();
+      if (sanitized) {
+        const pattern = `"%${sanitized}%"`;
+        query = query.or(searchCols.map(col => `${col}.ilike.${pattern}`).join(','));
+      }
+    }
 
-    // Update KPI for active category
-    document.getElementById('kpi-cat-total').textContent = Number(data.total).toLocaleString();
+    if (state.selectedUnit) {
+      if (state.currentCategory === 'incoming_outgoing') {
+        query = query.eq('from_unit', state.selectedUnit);
+      } else if (state.currentCategory === 'personnel') {
+        query = query.eq('unit', state.selectedUnit);
+      } else if (state.currentCategory === 'cfnr_memo') {
+        query = query.eq('unit_for_oic', state.selectedUnit);
+      }
+    }
 
-    // Update pagination bar
-    const startIdx = data.total > 0 ? (state.currentPage - 1) * state.limit + 1 : 0;
-    const endIdx = Math.min(state.currentPage * state.limit, data.total);
-    document.getElementById('pagination-info').textContent = `Showing ${startIdx} to ${endIdx} of ${Number(data.total).toLocaleString()} records`;
-    document.getElementById('current-page-display').textContent = `Page ${state.currentPage} of ${state.totalPages || 1}`;
+    if (state.selectedStatus && state.currentCategory === 'incoming_outgoing') {
+      query = query.eq('status', state.selectedStatus);
+    }
 
-    if (!data.records || data.records.length === 0) {
+    const { data: records, count, error } = await query
+      .order('id', { ascending: false })
+      .range(fromIdx, toIdx);
+
+    if (error) throw error;
+
+    const total = count || 0;
+    state.totalRecords = total;
+    state.totalPages = state.limit > 0 ? Math.max(1, Math.ceil(total / state.limit)) : 1;
+
+    document.getElementById('kpi-cat-total').textContent = Number(total).toLocaleString();
+
+    const startIdx = total > 0 ? fromIdx + 1 : 0;
+    const endIdx = Math.min(state.currentPage * state.limit, total);
+    document.getElementById('pagination-info').textContent = `Showing ${startIdx} to ${endIdx} of ${Number(total).toLocaleString()} records`;
+    document.getElementById('current-page-display').textContent = `Page ${state.currentPage} of ${state.totalPages}`;
+
+    if (!records || records.length === 0) {
       tableBody.innerHTML = '';
       tableEmpty.style.display = 'flex';
       return;
     }
 
-    renderTableRows(data.records);
+    renderTableRows(records);
   } catch (err) {
-    console.error('Failed to fetch documents:', err);
+    handleSupabaseError(err, 'Failed to load records from Supabase.');
     tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: #dc2626;">Failed to load records from database.</td></tr>';
   }
 }
@@ -453,6 +645,14 @@ function renderTableRows(records) {
       if (col.type === 'actions') {
         td.className = 'actions-cell';
         td.style.justifyContent = 'flex-end';
+
+        if (!canCurrentUserWrite()) {
+          td.textContent = 'View only';
+          td.style.color = 'var(--text-faint)';
+          td.style.fontSize = '0.75rem';
+          tr.appendChild(td);
+          return;
+        }
 
         // Custody Stamp button (for incoming_outgoing and personnel)
         if (state.currentCategory === 'incoming_outgoing' || state.currentCategory === 'personnel') {
@@ -774,6 +974,13 @@ function closeModal(modalId) {
 // Handle Form Submit
 async function handleDocumentFormSubmit(e) {
   e.preventDefault();
+  const sb = getSupabaseClient();
+  if (!sb) return;
+  if (!canCurrentUserWrite()) {
+    showToast('Viewer accounts cannot modify records.', 'error');
+    return;
+  }
+
   const form = e.target;
   const formData = new FormData(form);
   const data = {};
@@ -782,59 +989,64 @@ async function handleDocumentFormSubmit(e) {
     data[key] = value.trim();
   });
 
-  const payload = {
-    category: state.currentCategory,
-    data: data
-  };
+  if (!state.editingRecordId && !data.date) {
+    data.date = new Date().toISOString().split('T')[0];
+  }
+
+  const userEmail = getCurrentUserEmail();
+  const tableName = TABLE_MAP[state.currentCategory] || 'incoming_outgoing_docs';
 
   try {
-    let url = '/api/documents';
-    let method = 'POST';
-
     if (state.editingRecordId) {
-      url = `/api/documents/${state.editingRecordId}`;
-      method = 'PUT';
-    }
-
-    const res = await fetch(url, {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await res.json();
-    if (result.success) {
-      showToast(state.editingRecordId ? 'Record updated successfully!' : 'Document logged successfully!', 'success');
-      closeModal('modal-document');
-      loadStats();
-      loadDocuments();
+      data.updated_by = userEmail;
+      const { error } = await sb
+        .from(tableName)
+        .update(data)
+        .eq('id', state.editingRecordId);
+      if (error) throw error;
+      showToast('Record updated successfully!', 'success');
     } else {
-      showToast(result.error || 'Failed to save record', 'error');
+      data.created_by = userEmail;
+      data.updated_by = userEmail;
+      const { error } = await sb
+        .from(tableName)
+        .insert(data);
+      if (error) throw error;
+      showToast('Document logged successfully!', 'success');
     }
+
+    closeModal('modal-document');
+    loadStats();
+    loadDocuments();
   } catch (err) {
-    console.error('Save error:', err);
-    showToast('Network error while saving.', 'error');
+    handleSupabaseError(err, 'Failed to save record.');
   }
 }
 
 // Delete Record
 async function handleDeleteRecord(id) {
   if (!confirm('Are you sure you want to permanently delete this record?')) return;
+  const sb = getSupabaseClient();
+  if (!sb) return;
+  if (!canCurrentUserWrite()) {
+    showToast('Viewer accounts cannot delete records.', 'error');
+    return;
+  }
+
+  const tableName = TABLE_MAP[state.currentCategory] || 'incoming_outgoing_docs';
 
   try {
-    const res = await fetch(`/api/documents/${id}?category=${state.currentCategory}`, {
-      method: 'DELETE'
-    });
-    const result = await res.json();
-    if (result.success) {
-      showToast('Record deleted.', 'success');
-      loadStats();
-      loadDocuments();
-    } else {
-      showToast(result.error || 'Failed to delete', 'error');
-    }
+    const { error } = await sb
+      .from(tableName)
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+
+    showToast('Record deleted.', 'success');
+    loadStats();
+    loadDocuments();
   } catch (err) {
-    showToast('Failed to delete record.', 'error');
+    handleSupabaseError(err, 'Failed to delete record.');
   }
 }
 
@@ -847,31 +1059,109 @@ function openCustodyModal(docId) {
 
 async function handleApplyCustodyStamp() {
   if (!state.activeCustodyDocId) return;
+  const sb = getSupabaseClient();
+  if (!sb) return;
+  if (!canCurrentUserWrite()) {
+    showToast('Viewer accounts cannot stamp records.', 'error');
+    return;
+  }
 
   const selectVal = document.getElementById('custody-courier-select').value;
   const customVal = document.getElementById('custody-courier-custom').value.trim();
-  const courier = customVal || selectVal;
+  const courier = customVal || selectVal || 'Courier';
+
+  const now = new Date();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const stampText = `pick up by ${courier} ${mm}/${dd}/${yyyy}`;
+  const userEmail = getCurrentUserEmail();
 
   try {
-    const res = await fetch(`/api/documents/${state.activeCustodyDocId}/custody`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: state.currentCategory,
-        courier: courier
-      })
-    });
-    const result = await res.json();
-    if (result.success) {
-      showToast(`Stamped: ${result.stamp}`, 'success');
-      closeModal('modal-custody');
-      loadDocuments();
-      loadStats();
+    if (state.currentCategory === 'personnel') {
+      const { error } = await sb
+        .from('personnel_appointments')
+        .update({ received_by_units: stampText, updated_by: userEmail })
+        .eq('id', state.activeCustodyDocId);
+      if (error) throw error;
     } else {
-      showToast(result.error || 'Stamp failed', 'error');
+      const { error } = await sb
+        .from('incoming_outgoing_docs')
+        .update({ received_by: stampText, status: 'SIGNED', updated_by: userEmail })
+        .eq('id', state.activeCustodyDocId);
+      if (error) throw error;
     }
+
+    showToast(`Stamped: ${stampText}`, 'success');
+    closeModal('modal-custody');
+    loadDocuments();
+    loadStats();
   } catch (err) {
-    showToast('Error applying custody stamp.', 'error');
+    handleSupabaseError(err, 'Error applying custody stamp.');
+  }
+}
+
+// Browser-side Excel (.xlsx) Export from authenticated Supabase queries
+async function fetchAllRowsForExport(sb, table, columns) {
+  const pageSize = 1000;
+  let offset = 0;
+  const allRows = [];
+
+  while (true) {
+    const { data, error } = await sb
+      .from(table)
+      .select(columns.join(','))
+      .order('id', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allRows.push(...data);
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return allRows;
+}
+
+async function handleExportExcel() {
+  const sb = getSupabaseClient();
+  if (!sb) return;
+
+  const btn = document.getElementById('btn-export-excel');
+  if (btn) btn.disabled = true;
+  showToast('Fetching records & building Excel workbook...', 'info');
+
+  try {
+    const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs');
+    const wb = XLSX.utils.book_new();
+
+    for (const sheetDef of EXCEL_SHEETS) {
+      const rows = await fetchAllRowsForExport(sb, sheetDef.table, sheetDef.columns);
+      const aoa = [
+        sheetDef.headers,
+        ...rows.map(rec => sheetDef.columns.map(col => rec[col] ?? ''))
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = sheetDef.headers.map((h, idx) => {
+        const maxLen = Math.max(
+          h.length,
+          ...rows.slice(0, 50).map(r => String(r[sheetDef.columns[idx]] ?? '').length)
+        );
+        return { wch: Math.min(Math.max(maxLen + 3, 12), 60) };
+      });
+      XLSX.utils.book_append_sheet(wb, ws, sheetDef.title);
+    }
+
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    XLSX.writeFile(wb, `DOCTRAX_EXPORT_${stamp}.xlsx`);
+    showToast('Excel workbook downloaded!', 'success');
+  } catch (err) {
+    handleSupabaseError(err, 'Failed to export Excel workbook.');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
