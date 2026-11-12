@@ -29,20 +29,11 @@ A web-based document routing, communications tracking, and analytics dashboard b
 
 ---
 
-## Running Locally
+## Accessing the App
 
-Because the application is pure static HTML/CSS/JS inside `public/`, no build step is required:
-
-1. Clone or open the repository folder:
-   ```powershell
-   cd c:\devs\do-doctrax
-   ```
-2. Start a local HTTP server pointing to `public`:
-   ```powershell
-   python -m http.server 8000 -d public
-   ```
-3. Open http://localhost:8000 in your browser.
-   *(Ensure `http://localhost:8000` is listed under **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**.)*
+1. Open https://cfnr-do-dashboard.vercel.app/ in any web browser.
+2. Click **Sign in with Google** using an authorized Google / UP email address.
+3. If an account is not yet authorized, an administrator can add it on the **Users** page (`users.html`).
 
 ---
 
@@ -51,7 +42,7 @@ Because the application is pure static HTML/CSS/JS inside `public/`, no build st
 Deploy only the `public/` folder so local workbooks, databases, and OAuth client files are never uploaded:
 
 ```powershell
-cd c:\devs\do-doctrax\public
+cd public
 npx.cmd vercel --prod
 ```
 *(In PowerShell, `npx.cmd` avoids execution-policy blocks on `npx.ps1`. Accept default static settings without overriding build/output commands.)*
@@ -62,7 +53,6 @@ Under **Authentication → URL Configuration**:
 * **Redirect URLs:**
   * `https://cfnr-do-dashboard.vercel.app`
   * `https://cfnr-do-dashboard.vercel.app/**`
-  * `http://localhost:8000`
 
 ---
 
