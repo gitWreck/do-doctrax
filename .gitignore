@@ -3,9 +3,11 @@
 *.sqlite
 *.sqlite3
 
-# Excel Temporary & Export Files
+# Excel Temporary, Macro & Export Files
 DOCTRAX_EXPORT_*.xlsx
 ~$*.xlsx
+~$*.xlsm
+*.xlsm
 *.tmp
 
 # Python Bytecode & Cache
