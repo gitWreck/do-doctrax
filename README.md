@@ -1,116 +1,105 @@
-# DO-DocTrax: CFNR Dean's Office Document Tracking System
+# DO-DocTrax: Communications and Documents Received
 
-A zero-install, responsive document routing and communications tracking web application built for the **Dean's Office (DO) of the College of Forestry and Natural Resources (CFNR) at UP Los Baños (UPLB)**.
+- **Initialized / Created:** October 29, 2026
+- **Last Updated:** November 12, 2026
+- **Live Deployment:** https://cfnr-do-dashboard.vercel.app/
+- **Institution:** College of Forestry and Natural Resources (CFNR) — Dean's Office, UP Los Baños (UPLB)
 
-Designed to replace cumbersome multi-sheet Excel workbooks with a fast, reliable local web dashboard backed by **SQLite 3**.
-
----
-
-## Simple Setup Instructions (Beginner-Friendly)
-
-Follow these simple steps to install and run DO-DocTrax on any Windows computer:
-
-### Step 1: Download DO-DocTrax
-Choose one of the two options below:
-* **Option A (Direct Download ZIP):**  
-  Download link: https://github.com/gitWreck/do-doctrax/archive/refs/heads/main.zip  
-  *(Extract the downloaded ZIP file to your computer, e.g. `C:\devs\do-doctrax`)*
-* **Option B (Git Clone):**  
-  ```bash
-  git clone https://github.com/gitWreck/do-doctrax.git
-  cd do-doctrax
-  ```
-  Repository link: https://github.com/gitWreck/do-doctrax
+A web-based document routing, communications tracking, and analytics dashboard built for the **CFNR Dean's Office**. Replaced legacy multi-sheet Excel logbooks and local SQLite hosting with a static frontend deployed on **Vercel** and backed by **Supabase Authentication (Google OAuth)** + **Supabase PostgreSQL** with Row-Level Security (RLS).
 
 ---
 
-### Step 2: Install Python (If not already installed)
-1. Download Python for Windows:  
-   Download link: https://www.python.org/downloads/
-2. Run the installer.  
-   **IMPORTANT:** Check the box at the bottom that says **"Add python.exe to PATH"** before clicking Install Now.
+## Key Features
+
+* **Analytics Dashboard (Default Landing Tab):**
+  * Interactive **Start Date**, **End Date**, and **Trend Year** filters plus quick **All Dates**, **Reset**, and **Refresh** actions.
+  * Category KPI cards (clicking any card opens its logbook tab), **Summary by Category** table, **Monthly Trend (`Jan`–`Dec`)** stacked chart, **Top 10 Document Types** bar chart, **Status Mix** doughnut chart, and 5 category breakdown tables.
+* **Chronological Document Logs:**
+  * Covers **Incoming & Outgoing Docs**, **Email Received**, **University Memos & AO**, **Appointments, NOSA & HR**, **CFNR Internal Memos**, and **CFNR Admin Orders**.
+  * Always sorted newest first by `date` (`YYYY-MM-DD`, rendered cleanly as `DD Month YYYY`).
+* **Real-Time Search & Typable Filters:**
+  * Instant search across tracking numbers, personnel names, subjects, and remarks, paired with typable **Unit**, **Status**, and **Year** dropdown filters.
+* **Fast Entry, Batching & Custody Stamping:**
+  * Dynamic modals with auto-expanding textareas, typable lookup fields, **Clone / Batch Entry**, and 1-click **Quick Custody Pick-up Stamp** (`"pick up by [Courier] [MM/DD/YYYY]"` + status update to `SIGNED`).
+* **Filtered Excel Export (`.xlsx`):**
+  * Browser-side multi-sheet or active-tab export via SheetJS with **Export Scope**, **Year**, **Date From / Date To**, **Keyword Search**, and tab-specific filters.
+* **Role-Based Access & User Management (`users.html`):**
+  * Google OAuth sign-in gated by `public.allowed_users` (`admin`, `staff`, `viewer`) enforced at the database level via Postgres RLS.
+  * Admin-only **Users** page for adding, editing, activating/deactivating, or removing Google / UP email accounts.
 
 ---
 
-### Step 3: Install Excel Support (1 command)
-Open Command Prompt (`cmd`) or PowerShell, and run:
-```bash
-pip install openpyxl
+## Running Locally
+
+Because the application is pure static HTML/CSS/JS inside `public/`, no build step is required:
+
+1. Clone or open the repository folder:
+   ```powershell
+   cd c:\devs\do-doctrax
+   ```
+2. Start a local HTTP server pointing to `public`:
+   ```powershell
+   python -m http.server 8000 -d public
+   ```
+3. Open http://localhost:8000 in your browser.
+   *(Ensure `http://localhost:8000` is listed under **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**.)*
+
+---
+
+## Deploying to Vercel (CLI, No GitHub Link Required)
+
+Deploy only the `public/` folder so local workbooks, databases, and OAuth client files are never uploaded:
+
+```powershell
+cd c:\devs\do-doctrax\public
+npx.cmd vercel --prod
 ```
-*(This is the only package needed so the app can read and write Excel files).*
+*(In PowerShell, `npx.cmd` avoids execution-policy blocks on `npx.ps1`. Accept default static settings without overriding build/output commands.)*
+
+### Required Auth URLs in Supabase Dashboard
+Under **Authentication → URL Configuration**:
+* **Site URL:** `https://cfnr-do-dashboard.vercel.app`
+* **Redirect URLs:**
+  * `https://cfnr-do-dashboard.vercel.app`
+  * `https://cfnr-do-dashboard.vercel.app/**`
+  * `http://localhost:8000`
 
 ---
 
-### Step 4: Load the 2025 Excel Data (One-Time Setup)
-In Command Prompt or PowerShell inside the `do-doctrax` folder, run:
-```bash
-python scripts/migrate_excel_to_sqlite.py
-```
-* In about 2 seconds, all **5,742 records** from `COMMUNICATIONS & DOCUMENTS RECEIVED 2025.xlsx` will be imported into your local `doctrax.db` database.
+## Database Schema & Maintenance
 
----
-
-### Step 5: Create Desktop App Icon (One-Time Setup)
-Run:
-```bash
-python scripts/create_desktop_shortcut.py
-```
-* This creates a **DO-DocTrax** shortcut icon right on your Windows Desktop.
-
----
-
-## Daily Use & Access Links
-
-### On Your Computer (Host)
-* **Start:** Double-click the **"DO-DocTrax"** icon on your Desktop (or double-click `launch.vbs` or `run.bat`).
-* **Web link:** http://localhost:8000
-* **Stop:** Double-click **`stop.bat`** in the project folder to shut down the background server.
-
-> [!TIP]
-> **Windows 11 "Smart App Control blocked a file" message?**  
-> If Windows blocks `launch.vbs` because it was downloaded from the internet:
-> 1. Right-click `launch.vbs` → Select **Properties**.
-> 2. At the bottom under Security, check the **"Unblock"** box → Click **OK**.
-> 3. Alternatively, you can always double-click **`run.bat`** or run `python server.py`.
-
-### On Other Computers (Colleagues on the same Wi-Fi / Office Network)
-* Keep DO-DocTrax running on your host computer.
-* Colleagues on the same Wi-Fi can open their browser and visit your network link:
-  * Network link: http://192.168.0.204:8000
-  *(Or click the **"Share on Wi-Fi"** button in your dashboard header to copy the link anytime).*
-
----
-
-## Key Features & How to Use
-
-* **Search Anything Instantly:** Type any keyword, tracking number (`Doctrax`), personnel name, or unit in the top search bar. Search results update in real-time.
-* **1-Click Pick-up / Custody Stamp:** On any document, click **"Stamp"**, select the courier name (`Kuya Paolo`, `Kuya Alberth`, etc.), and click **"Apply Stamp & Sign"**. It automatically logs `"pick up by [Courier] [Date]"` and marks the record as **SIGNED**.
-* **Rapid Batch Entry (Clone):** Click the **Clone** icon on any record to duplicate it with today's date—ideal for quickly logging batches of travel requests or appointments.
-* **Export to Excel:** Click **"Export Excel (.xlsx)"** in the top-right header anytime to download an updated, multi-sheet Excel file matching the official university format.
+* **[supabase_schema.sql](supabase_schema.sql):** Creates `allowed_users`, security helper functions (`current_user_email`, `is_allowed_user`, `can_write`, `is_admin`), operational tables, `lookup_values`, RLS policies, and `updated_at` triggers.
+* **[supabase_normalize_dates.sql](supabase_normalize_dates.sql):** Idempotent SQL script to normalize legacy `MM/DD/YYYY` / `Month DD, YYYY` strings into `YYYY-MM-DD` and remove imported Excel header/total rows.
 
 ---
 
 ## Project Structure
 
-```
+```text
 do-doctrax/
-├── COMMUNICATIONS & DOCUMENTS RECEIVED 2025.xlsx  # 2025 Source Excel Workbook
-├── doctrax.db                                    # Local SQLite database (auto-created)
-├── launch.vbs                                    # Silent background launcher
-├── run.bat                                       # Standard Windows launcher
-├── stop.bat                                      # 1-click shutdown script
-├── server.py                                     # Zero-install Python HTTP & SQLite API
-├── scripts/
-│   ├── migrate_excel_to_sqlite.py                # Excel to SQLite migration script
-│   ├── export_sqlite_to_excel.py                 # Multi-sheet Excel export generator
-│   └── create_desktop_shortcut.py                # Desktop shortcut generator
-├── public/                                       # Frontend Web UI
-│   ├── index.html                                # Accessible semantic UI shell
+├── public/                              # Static web app deployed to Vercel
+│   ├── index.html                       # Dashboard + document logbook UI & modals
+│   ├── users.html                       # Admin-only authorized users management page
 │   ├── css/
-│   │   └── style.css                             # CFNR Forest Green design system
+│   │   └── style.css                    # CFNR Forest Green design system & responsive layouts
+│   ├── icons/
+│   │   └── cfnr-logo.png                # Official UPLB CFNR seal & favicon
 │   └── js/
-│       └── app.js                                # Client state, tables & custody stamper
-├── PRODUCT.md                                    # Durable product specification
-├── DESIGN.md                                     # Visual tokens and design guidelines
-└── do_doctrax_specification.md                   # Technical specification & checklist
+│       ├── config.js                    # Supabase project URL & publishable key
+│       ├── auth.js                      # Google OAuth (PKCE) & allowed_users access gate
+│       ├── dashboard.js                 # Live dashboard aggregations & Chart.js charts
+│       ├── app.js                       # Logbook CRUD, filters, custody stamp & Excel export
+│       └── users.js                     # Admin user whitelist CRUD controller
+├── scripts/
+│   ├── migrate_sqlite_to_supabase.py    # One-time SQLite -> Supabase REST migration utility
+│   └── export_supabase_to_excel.py      # Standalone Python backup/export script
+├── mds/
+│   ├── login_architecture.md            # Supabase Auth & RLS architecture notes
+│   └── login_implementation_checklist.md
+├── supabase_schema.sql                  # Postgres schema, RLS policies & seed admins
+├── supabase_normalize_dates.sql         # Date format normalization migration SQL
+├── PRODUCT.md                           # Durable product specification
+├── DESIGN.md                            # Design tokens & visual guidelines
+├── do_doctrax_specification.md          # Original system specification
+└── README.md
 ```

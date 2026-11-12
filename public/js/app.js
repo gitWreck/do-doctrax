@@ -141,7 +141,7 @@ function handleSupabaseError(err, fallbackMsg) {
 
 // Application State
 const state = {
-  currentCategory: 'incoming_outgoing',
+  currentCategory: 'dashboard',
   currentPage: 1,
   limit: 50,
   totalPages: 1,
@@ -318,19 +318,46 @@ const CATEGORY_CONFIG = {
 // Application Initialization (runs only after Auth Gate authorizes user)
 let appInitialized = false;
 
+function switchCategoryTab(category) {
+  state.currentCategory = category;
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.category === category);
+  });
+
+  const isDashboard = category === 'dashboard';
+  const dashboardView = document.getElementById('dashboard-view');
+  const logbookView = document.getElementById('logbook-view');
+  const btnNewRecord = document.getElementById('btn-new-record');
+
+  if (dashboardView) dashboardView.hidden = !isDashboard;
+  if (logbookView) logbookView.hidden = isDashboard;
+  if (btnNewRecord) btnNewRecord.hidden = isDashboard || !canCurrentUserWrite();
+
+  if (isDashboard) {
+    window.docTraxDashboard?.activate?.(switchCategoryTab);
+    return;
+  }
+
+  state.currentPage = 1;
+  state.searchQuery = '';
+  document.getElementById('filter-search').value = '';
+  updateToolbarForCategory();
+  renderKpiCards();
+  loadDocuments();
+}
+
 async function initDocTraxApp() {
   if (!appInitialized) {
     setupEventListeners();
     appInitialized = true;
   }
-  const btnNewRecord = document.getElementById('btn-new-record');
-  if (btnNewRecord) {
-    btnNewRecord.hidden = !canCurrentUserWrite();
+  const navManageUsers = document.getElementById('nav-manage-users');
+  if (navManageUsers) {
+    navManageUsers.hidden = window.docTraxAuth?.getProfile?.()?.role !== 'admin';
   }
-  updateToolbarForCategory();
   await loadLookups();
   await loadStats();
-  await loadDocuments();
+  switchCategoryTab(state.currentCategory);
 }
 
 window.addEventListener('doctrax:authorized', initDocTraxApp);
@@ -343,15 +370,7 @@ function setupEventListeners() {
   // Category Navigation Tabs
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      state.currentCategory = tab.dataset.category;
-      state.currentPage = 1;
-      state.searchQuery = '';
-      document.getElementById('filter-search').value = '';
-      updateToolbarForCategory();
-      renderKpiCards();
-      loadDocuments();
+      switchCategoryTab(tab.dataset.category);
     });
   });
 
@@ -1357,6 +1376,7 @@ async function handleDocumentFormSubmit(e) {
     }
 
     closeModal('modal-document');
+    window.docTraxDashboard?.invalidateCache?.();
     loadStats();
     loadDocuments();
   } catch (err) {
@@ -1384,6 +1404,7 @@ async function handleDeleteRecord(id) {
     if (error) throw error;
 
     showToast('Record deleted.', 'success');
+    window.docTraxDashboard?.invalidateCache?.();
     loadStats();
     loadDocuments();
   } catch (err) {
@@ -1435,6 +1456,7 @@ async function handleApplyCustodyStamp() {
 
     showToast(`Stamped: ${stampText}`, 'success');
     closeModal('modal-custody');
+    window.docTraxDashboard?.invalidateCache?.();
     loadDocuments();
     loadStats();
   } catch (err) {
@@ -1448,10 +1470,13 @@ function openExportModal() {
   const title = document.getElementById('modal-export-title');
   const fieldsContainer = document.getElementById('export-form-fields');
   const cat = state.currentCategory;
+  const isDashboard = cat === 'dashboard';
   const config = CATEGORY_CONFIG[cat];
-  const tabFilters = EXPORT_TAB_FILTERS[cat] || [];
+  const tabFilters = isDashboard ? [] : (EXPORT_TAB_FILTERS[cat] || []);
 
-  title.textContent = `Export Excel — ${config.title}`;
+  title.textContent = isDashboard
+    ? 'Export Excel — All Document Logs'
+    : `Export Excel — ${config.title}`;
 
   const comboboxDefs = [
     { name: 'year', lookup: 'years' },
@@ -1463,8 +1488,8 @@ function openExportModal() {
     <div class="form-group col-span-2">
       <label class="form-label">Export Scope</label>
       <select name="scope" id="export-scope" class="select-control">
-        <option value="current" selected>Current Tab: ${escapeHtml(config.title)}</option>
-        <option value="all">All Document Logs (Multi-Sheet Workbook)</option>
+        ${isDashboard ? '' : `<option value="current" selected>Current Tab: ${escapeHtml(config.title)}</option>`}
+        <option value="all" ${isDashboard ? 'selected' : ''}>All Document Logs (Multi-Sheet Workbook)</option>
       </select>
     </div>
 

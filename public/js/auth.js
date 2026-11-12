@@ -11,6 +11,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
   },
 });
 
@@ -133,6 +134,24 @@ async function fetchAuthorizedProfile(session) {
   return data;
 }
 
+function cleanOAuthParamsFromUrl() {
+  const url = new URL(window.location.href);
+  let dirty = false;
+  if (url.hash && (url.hash.includes('access_token=') || url.hash.includes('refresh_token='))) {
+    url.hash = '';
+    dirty = true;
+  }
+  if (url.searchParams.has('code')) {
+    url.searchParams.delete('code');
+    dirty = true;
+  }
+  if (dirty) {
+    const query = url.searchParams.toString();
+    const clean = url.pathname + (query ? `?${query}` : '') + url.hash;
+    window.history.replaceState({}, document.title, clean);
+  }
+}
+
 function readOAuthErrorFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -240,6 +259,7 @@ async function bootstrapAuth() {
   try {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
+    cleanOAuthParamsFromUrl();
     await applySession(data?.session || null);
   } catch (err) {
     console.error('Auth initialization error:', err);
@@ -251,6 +271,7 @@ async function bootstrapAuth() {
     if (event === 'SIGNED_OUT') {
       applySession(null);
     } else if (event === 'SIGNED_IN') {
+      cleanOAuthParamsFromUrl();
       applySession(session, { silentRefresh: authState.isAuthorized });
     } else if (event === 'TOKEN_REFRESHED') {
       applySession(session, { silentRefresh: true });

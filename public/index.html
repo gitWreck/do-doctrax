@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Communications and Documents Received</title>
+  <link rel="icon" type="image/png" href="icons/cfnr-logo.png">
   <link rel="stylesheet" href="css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,16 +27,11 @@
     <div class="auth-card">
       <div class="auth-brand">
         <div class="brand-icon auth-brand-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
-            <path d="M12 7v10" />
-            <path d="M9 11l3-4 3 4" />
-          </svg>
+          <img src="icons/cfnr-logo.png" alt="UPLB CFNR Logo">
         </div>
         <div>
           <h1 class="auth-title">Communications and Documents Received</h1>
-          <p class="auth-subtitle">College of Forestry and Natural Resources — Dean's Office, UPLB</p>
+          <!-- <p class="auth-subtitle">College of Forestry and Natural Resources — Dean's Office, UPLB</p> -->
         </div>
       </div>
 
@@ -44,30 +40,37 @@
       <!-- State A: Sign In -->
       <div id="auth-signin-view" class="auth-view">
         <p class="auth-description">
-          Sign in with your authorized Google account to access the Dean's Office document tracking logbook.
+          Sign in with your authorized Google account to access the Dean's Office dashboard.
         </p>
         <button id="btn-google-signin" type="button" class="btn btn-google">
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"/>
-            <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"/>
+            <path fill="#4285F4"
+              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z" />
+            <path fill="#34A853"
+              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z" />
+            <path fill="#FBBC05"
+              d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z" />
+            <path fill="#EA4335"
+              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z" />
           </svg>
           <span class="btn-google-label">Sign in with Google</span>
         </button>
-        <p class="auth-footnote">Access is restricted to authorized CFNR Dean's Office personnel.</p>
+        <p class="auth-footnote">Access is restricted to authorized UPLB-CFNR Dean's Office personnel.</p>
       </div>
 
       <!-- State B: Access Restricted -->
       <div id="auth-restricted-view" class="auth-view" hidden>
         <div class="auth-restricted-badge">Access Restricted</div>
         <p class="auth-description">
-          You are signed in as <strong id="restricted-user-email">Unknown</strong>, which is not currently authorized to access DO-DocTrax.
+          You are signed in as <strong id="restricted-user-email">Unknown</strong>, which is not currently authorized to
+          access DO-DocTrax.
         </p>
         <p class="auth-footnote" style="margin-bottom: 1rem;">
-          Contact a Dean's Office administrator to add your email to the access list, or switch to an authorized account.
+          Contact a Dean's Office administrator to add your email to the access list, or switch to an authorized
+          account.
         </p>
-        <button id="btn-restricted-signout" type="button" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <button id="btn-restricted-signout" type="button" class="btn btn-primary"
+          style="width: 100%; justify-content: center;">
           Sign Out &amp; Switch Account
         </button>
       </div>
@@ -80,13 +83,7 @@
     <header class="top-header">
       <div class="brand-section">
         <div class="brand-icon">
-          <!-- Institutional Tree/Shield SVG Icon -->
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" />
-            <path d="M12 7v10" />
-            <path d="M9 11l3-4 3 4" />
-          </svg>
+          <img src="icons/cfnr-logo.png" alt="UPLB CFNR Logo">
         </div>
         <div>
           <div class="brand-title">
@@ -107,7 +104,7 @@
           Export Excel (.xlsx)
         </button>
 
-        <button id="btn-new-record" class="btn btn-primary">
+        <button id="btn-new-record" class="btn btn-primary" hidden>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -115,6 +112,17 @@
           </svg>
           Log New Document
         </button>
+
+        <a href="users.html" id="nav-manage-users" class="btn btn-ghost-light" hidden title="Manage authorized users">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Users
+        </a>
 
         <!-- Authenticated User Menu -->
         <div id="header-user-menu" class="user-menu" hidden>
@@ -132,7 +140,17 @@
 
     <!-- Operational Category Tabs -->
     <nav class="category-nav">
-      <button class="nav-tab active" data-category="incoming_outgoing">
+      <button class="nav-tab active" data-category="dashboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="9" />
+          <rect x="14" y="3" width="7" height="5" />
+          <rect x="14" y="12" width="7" height="9" />
+          <rect x="3" y="16" width="7" height="5" />
+        </svg>
+        Dashboard
+      </button>
+
+      <button class="nav-tab" data-category="incoming_outgoing">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
           <polyline points="14 2 14 8 20 8" />
@@ -203,6 +221,245 @@
     <!-- Main Workspace -->
     <main class="workspace-content">
 
+      <!-- Dashboard Tab View (Initial Landing View) -->
+      <div id="dashboard-view" class="dashboard-view">
+        <section class="dash-header-bar">
+          <div>
+            <h2 class="dash-heading">Communications &amp; Documents Dashboard</h2>
+            <p class="dash-subtitle" id="dash-overview-subtitle">Loading dashboard metrics...</p>
+          </div>
+          <div class="dash-controls">
+            <div class="dash-control-item">
+              <label for="dash-start-date">Start Date</label>
+              <input type="date" id="dash-start-date" class="input-text" value="2026-01-01">
+            </div>
+            <div class="dash-control-item">
+              <label for="dash-end-date">End Date</label>
+              <input type="date" id="dash-end-date" class="input-text" value="2026-12-31">
+            </div>
+            <div class="dash-control-item">
+              <label for="dash-trend-year">Trend Year</label>
+              <select id="dash-trend-year" class="select-control">
+                <option value="2026" selected>2026</option>
+              </select>
+            </div>
+            <div class="dash-control-actions">
+              <button type="button" id="dash-btn-all-dates" class="btn btn-secondary btn-sm" title="Clear Start/End dates to include all years">All Dates</button>
+              <button type="button" id="dash-btn-reset" class="btn btn-ghost btn-sm" title="Reset filters to default year">Reset</button>
+              <button type="button" id="dash-btn-refresh" class="btn btn-primary btn-sm" title="Reload latest data from database">Refresh</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Category KPI Cards -->
+        <section class="dash-kpi-grid" id="dash-kpi-grid">
+          <!-- Rendered dynamically by dashboard.js -->
+        </section>
+
+        <!-- Summary By Category + Total Transactions Bar Chart -->
+        <section class="dash-split">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Summary by Category</h3>
+                <p class="dash-card-subtitle">Click a category row to open its logbook</p>
+              </div>
+            </div>
+            <div class="dash-table-scroll">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th class="num">Total</th>
+                    <th class="num">In Range</th>
+                    <th class="num">Share</th>
+                    <th>First Entry</th>
+                    <th>Latest Entry</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-summary-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Total Transactions per Category</h3>
+                <p class="dash-card-subtitle">In selected date range vs total registered</p>
+              </div>
+            </div>
+            <div class="dash-chart-box">
+              <canvas id="dash-chart-categories"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Monthly Trend Table + Stacked Chart -->
+        <section class="dash-split dash-split-wide">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title" id="dash-monthly-title">Monthly Trend (2026)</h3>
+                <p class="dash-card-subtitle">Transactions per month for selected trend year</p>
+              </div>
+            </div>
+            <div class="dash-table-scroll">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th class="num">In/Out</th>
+                    <th class="num">Email</th>
+                    <th class="num">Memo/AO</th>
+                    <th class="num">Appts</th>
+                    <th class="num">CFNR Memo</th>
+                    <th class="num">CFNR AO</th>
+                    <th class="num">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-monthly-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Transactions per Month (Stacked)</h3>
+                <p class="dash-card-subtitle">Monthly distribution across document logs</p>
+              </div>
+            </div>
+            <div class="dash-chart-box dash-chart-box-tall">
+              <canvas id="dash-chart-monthly"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Charts Row: Top 10 Document Types & Status Mix -->
+        <section class="dash-split">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Top 10 Document Types (Incoming / Outgoing)</h3>
+                <p class="dash-card-subtitle">Filtered by Start / End date</p>
+              </div>
+            </div>
+            <div class="dash-chart-box dash-chart-box-tall">
+              <canvas id="dash-chart-doctypes"></canvas>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <div>
+                <h3 class="dash-card-title">Incoming / Outgoing — Status Mix</h3>
+                <p class="dash-card-subtitle">Filtered by Start / End date</p>
+              </div>
+            </div>
+            <div class="dash-chart-box dash-chart-box-tall">
+              <canvas id="dash-chart-status"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Detailed Breakdown Tables -->
+        <section class="dash-breakdown-grid">
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title">Incoming / Outgoing — by Document Type</h3>
+            </div>
+            <div class="dash-table-scroll dash-table-tall">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>Document Type</th>
+                    <th class="num">Count</th>
+                    <th class="num">% of Range</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-bd-inout-types"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title">Incoming / Outgoing — by Status</h3>
+            </div>
+            <div class="dash-table-scroll dash-table-tall">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th class="num">Count</th>
+                    <th class="num">% of Range</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-bd-inout-status"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title">University Memos &amp; AO — by Type</h3>
+            </div>
+            <div class="dash-table-scroll">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>Issuance Type</th>
+                    <th class="num">Count</th>
+                    <th class="num">% of Range</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-bd-memo-types"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title">Appointments, NOSA — by Document Type</h3>
+            </div>
+            <div class="dash-table-scroll dash-table-tall">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>Action Type</th>
+                    <th class="num">Count</th>
+                    <th class="num">% of Range</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-bd-appt-types"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">
+              <h3 class="dash-card-title">Appointments, NOSA — by Unit</h3>
+            </div>
+            <div class="dash-table-scroll dash-table-tall">
+              <table class="data-table dash-table">
+                <thead>
+                  <tr>
+                    <th>CFNR Unit</th>
+                    <th class="num">Count</th>
+                    <th class="num">% of Range</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-bd-appt-units"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Logbook Tabs View (Hidden when Dashboard tab is active) -->
+      <div id="logbook-view" class="logbook-view" hidden>
+
       <!-- KPI Row -->
       <section class="kpi-row">
         <div class="kpi-card" id="kpi-card-1">
@@ -239,7 +496,8 @@
 
           <!-- Typable Unit Filter -->
           <div class="combobox-wrapper toolbar-combobox" id="filter-unit-wrapper">
-            <input type="text" id="filter-unit" class="input-text combobox-input" placeholder="All Units" autocomplete="off">
+            <input type="text" id="filter-unit" class="input-text combobox-input" placeholder="All Units"
+              autocomplete="off">
             <button type="button" class="combobox-toggle" tabindex="-1" title="Show units">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="6 9 12 15 18 9"></polyline>
@@ -250,7 +508,8 @@
 
           <!-- Typable Status Filter -->
           <div class="combobox-wrapper toolbar-combobox" id="filter-status-wrapper">
-            <input type="text" id="filter-status" class="input-text combobox-input" placeholder="All Statuses" autocomplete="off">
+            <input type="text" id="filter-status" class="input-text combobox-input" placeholder="All Statuses"
+              autocomplete="off">
             <button type="button" class="combobox-toggle" tabindex="-1" title="Show statuses">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="6 9 12 15 18 9"></polyline>
@@ -261,7 +520,8 @@
 
           <!-- Typable Year Filter -->
           <div class="combobox-wrapper toolbar-combobox toolbar-combobox-year" id="filter-year-wrapper">
-            <input type="text" id="filter-year" class="input-text combobox-input" placeholder="All Years" autocomplete="off">
+            <input type="text" id="filter-year" class="input-text combobox-input" placeholder="All Years"
+              autocomplete="off">
             <button type="button" class="combobox-toggle" tabindex="-1" title="Show years">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="6 9 12 15 18 9"></polyline>
@@ -322,6 +582,7 @@
           <button id="btn-last-page" class="btn btn-secondary btn-sm" title="Last page">&raquo;</button>
         </div>
       </footer>
+      </div>
     </main>
 
     <!-- Modal: Log / Edit Document -->
@@ -399,7 +660,9 @@
 
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script type="module" src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
   <script src="js/app.js"></script>
 </body>
 
