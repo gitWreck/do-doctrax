@@ -91,7 +91,6 @@
         <div>
           <div class="brand-title">
             Communications and Documents Received
-            <span class="brand-badge">LOGBOOK</span>
           </div>
           <div class="brand-subtitle">College of Forestry and Natural Resources — Dean's Office, UPLB</div>
         </div>
@@ -190,7 +189,7 @@
         <span class="tab-badge" id="badge-cfnr_ao">-</span>
       </button>
 
-      <button class="nav-tab" data-category="ppmp">
+      <button class="nav-tab" data-category="ppmp" hidden>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="9" cy="21" r="1" />
           <circle cx="20" cy="21" r="1" />
@@ -206,28 +205,22 @@
 
       <!-- KPI Row -->
       <section class="kpi-row">
-        <div class="kpi-card">
-          <span class="kpi-label">Active Category Total</span>
+        <div class="kpi-card" id="kpi-card-1">
+          <span class="kpi-label" id="kpi-label-1">Total Registered Transactions</span>
           <span class="kpi-value" id="kpi-cat-total">0</span>
-          <span class="kpi-subtext">Registered transactions</span>
+          <span class="kpi-subtext" id="kpi-sub-1">Active category total</span>
         </div>
 
-        <div class="kpi-card">
-          <span class="kpi-label">Signed / Completed</span>
+        <div class="kpi-card" id="kpi-card-2">
+          <span class="kpi-label" id="kpi-label-2">Signed / Completed</span>
           <span class="kpi-value" id="kpi-signed" style="color: #166534;">0</span>
-          <span class="kpi-subtext">Released or filed documents</span>
+          <span class="kpi-subtext" id="kpi-sub-2">Released or filed documents</span>
         </div>
 
-        <div class="kpi-card">
-          <span class="kpi-label">For Review / Action</span>
+        <div class="kpi-card" id="kpi-card-3">
+          <span class="kpi-label" id="kpi-label-3">For Review / Action</span>
           <span class="kpi-value" id="kpi-pending" style="color: #854d0e;">0</span>
-          <span class="kpi-subtext">Currently pending review</span>
-        </div>
-
-        <div class="kpi-card">
-          <span class="kpi-label">Total System Transactions</span>
-          <span class="kpi-value" id="kpi-grand-total">0</span>
-          <span class="kpi-subtext">Across all logs</span>
+          <span class="kpi-subtext" id="kpi-sub-3">Currently pending review</span>
         </div>
       </section>
 
@@ -244,15 +237,38 @@
             <input type="text" id="filter-search" class="input-text" placeholder="Search tracking #, name, keyword...">
           </div>
 
-          <!-- Unit Filter -->
-          <select id="filter-unit" class="select-control">
-            <option value="">All Units</option>
-          </select>
+          <!-- Typable Unit Filter -->
+          <div class="combobox-wrapper toolbar-combobox" id="filter-unit-wrapper">
+            <input type="text" id="filter-unit" class="input-text combobox-input" placeholder="All Units" autocomplete="off">
+            <button type="button" class="combobox-toggle" tabindex="-1" title="Show units">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="combobox-dropdown" style="display: none;"></div>
+          </div>
 
-          <!-- Status Filter -->
-          <select id="filter-status" class="select-control">
-            <option value="">All Statuses</option>
-          </select>
+          <!-- Typable Status Filter -->
+          <div class="combobox-wrapper toolbar-combobox" id="filter-status-wrapper">
+            <input type="text" id="filter-status" class="input-text combobox-input" placeholder="All Statuses" autocomplete="off">
+            <button type="button" class="combobox-toggle" tabindex="-1" title="Show statuses">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="combobox-dropdown" style="display: none;"></div>
+          </div>
+
+          <!-- Typable Year Filter -->
+          <div class="combobox-wrapper toolbar-combobox toolbar-combobox-year" id="filter-year-wrapper">
+            <input type="text" id="filter-year" class="input-text combobox-input" placeholder="All Years" autocomplete="off">
+            <button type="button" class="combobox-toggle" tabindex="-1" title="Show years">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="combobox-dropdown" style="display: none;"></div>
+          </div>
 
           <button id="btn-reset-filters" class="btn btn-ghost btn-sm" title="Reset all filters">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -355,6 +371,29 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal: Export to Excel with Filters -->
+    <div id="modal-export" class="modal-backdrop">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-export-title">Export to Excel</h2>
+          <button type="button" class="btn btn-ghost btn-sm close-modal" data-modal="modal-export">&times;</button>
+        </div>
+        <form id="form-export">
+          <div class="modal-body" id="export-form-fields">
+            <!-- Injected dynamically based on active tab -->
+          </div>
+          <div class="modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-export-clear">Clear Filters</button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn btn-secondary close-modal" data-modal="modal-export">Cancel</button>
+              <button type="submit" class="btn btn-primary" id="btn-confirm-export">Export .xlsx</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Toast Notifications Container -->
     <div class="toast-container" id="toast-container"></div>
 

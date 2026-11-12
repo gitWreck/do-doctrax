@@ -30,48 +30,85 @@ const DEFAULT_COURIERS = [
 
 const EXCEL_SHEETS = [
   {
+    category: 'incoming_outgoing',
     title: 'INCOMING-OUTGOING DOCS',
     table: 'incoming_outgoing_docs',
     headers: ['ID', 'Date', 'Doctrax', 'From', 'Document Type', 'Description', 'Status', 'Received by', 'Remarks'],
     columns: ['id', 'date', 'doctrax_no', 'from_unit', 'doc_type', 'description', 'status', 'received_by', 'remarks']
   },
   {
+    category: 'email',
     title: 'EMAIL RECEIVED',
     table: 'email_logs',
     headers: ['ID', 'Date', 'From', 'Doctrax', 'Description', 'Deadline/Link', 'Remarks'],
     columns: ['id', 'date', 'sender', 'doctrax_no', 'description', 'deadline_link', 'remarks']
   },
   {
+    category: 'memo_external',
     title: 'MEMO, AO RECEIVED IN EMAIL',
     table: 'memo_ao_external',
     headers: ['ID', 'Date', 'From', 'Document Type', 'Memo No.', 'Description / Subject', 'Remarks'],
     columns: ['id', 'date', 'sender', 'doc_type', 'memo_no', 'subject', 'remarks']
   },
   {
+    category: 'personnel',
     title: 'APPOINTMENT, NOSA, ETC.',
     table: 'personnel_appointments',
     headers: ['ID', 'Date', 'Doctrack', 'From', 'To', 'Unit', 'Document Type', 'Description', 'Received by', 'Received by UNITS', 'Remarks'],
     columns: ['id', 'date', 'doctrack_no', 'from_office', 'to_person', 'unit', 'doc_type', 'description', 'received_by', 'received_by_units', 'remarks']
   },
   {
+    category: 'cfnr_memo',
     title: 'CFNR MEMO',
     table: 'cfnr_memos',
     headers: ['ID', 'Date', 'CFNR Memo No.', 'To', 'UNIT FOR OIC', 'Document Description', 'Remarks'],
     columns: ['id', 'date', 'memo_no', 'recipient', 'unit_for_oic', 'description', 'remarks']
   },
   {
+    category: 'cfnr_ao',
     title: 'CFNR ADMIN ORDER',
     table: 'cfnr_admin_orders',
     headers: ['ID', 'Date', 'CFNR AO No.', 'To', 'Document Description', 'Remarks'],
     columns: ['id', 'date', 'ao_no', 'recipient', 'description', 'remarks']
   },
   {
+    category: 'ppmp',
     title: 'OUT PPMP',
     table: 'ppmp_procurement',
     headers: ['ID', 'Date', 'Document Type/Description', 'Doctrack No.', 'Amount', 'Remarks'],
     columns: ['id', 'date', 'description', 'doctrack_no', 'amount', 'remarks']
   }
 ];
+
+const EXPORT_TAB_FILTERS = {
+  incoming_outgoing: [
+    { name: 'from_unit', label: 'Unit', type: 'combobox', lookup: 'units', placeholder: 'All Units', fromState: 'selectedUnit' },
+    { name: 'doc_type', label: 'Document Type', type: 'combobox', lookup: 'doc_types', placeholder: 'All Document Types' },
+    { name: 'status', label: 'Status', type: 'combobox', lookup: 'statuses', placeholder: 'All Statuses', fromState: 'selectedStatus' }
+  ],
+  email: [
+    { name: 'sender', label: 'Sender / Office', type: 'text', placeholder: 'e.g. OC UPLB, IRRI' }
+  ],
+  memo_external: [
+    { name: 'doc_type', label: 'Issuance Type', type: 'combobox', lookup: 'memo_types', placeholder: 'All Types (Memo / AO)' },
+    { name: 'sender', label: 'Issuing Office', type: 'text', placeholder: 'e.g. Office of the Chancellor' }
+  ],
+  personnel: [
+    { name: 'unit', label: 'CFNR Unit', type: 'combobox', lookup: 'units', placeholder: 'All Units', fromState: 'selectedUnit' },
+    { name: 'doc_type', label: 'Action Type', type: 'combobox', lookup: 'appointment_types', placeholder: 'All Action Types' },
+    { name: 'from_office', label: 'Issuing Office', type: 'text', placeholder: 'e.g. OVCA, OC, HRDO' }
+  ],
+  cfnr_memo: [
+    { name: 'unit_for_oic', label: 'Unit for OIC', type: 'combobox', lookup: 'units', placeholder: 'All Units', fromState: 'selectedUnit' },
+    { name: 'recipient', label: 'Addressed To', type: 'text', placeholder: 'Filter recipient name...' }
+  ],
+  cfnr_ao: [
+    { name: 'recipient', label: 'Appointed Members', type: 'text', placeholder: 'Filter appointed members...' }
+  ],
+  ppmp: [
+    { name: 'doctrack_no', label: 'Doctrack No.', type: 'text', placeholder: 'Filter Doctrack No...' }
+  ]
+};
 
 function getSupabaseClient() {
   if (!window.docTraxAuth?.isAuthorized?.()) return null;
@@ -112,12 +149,14 @@ const state = {
   searchQuery: '',
   selectedUnit: '',
   selectedStatus: '',
+  selectedYear: '',
   lookups: {
     units: [],
     doc_types: [],
     statuses: [],
     appointment_types: [],
     memo_types: [],
+    years: [],
     couriers: []
   },
   stats: {},
@@ -209,7 +248,7 @@ const CATEGORY_CONFIG = {
       { name: 'date', label: 'Date Received', type: 'date', defaultToday: true },
       { name: 'to_person', label: 'Personnel / Faculty Name' },
       { name: 'unit', label: 'CFNR Unit', type: 'combobox', lookup: 'units', placeholder: 'Select or type unit...' },
-      { name: 'doc_type', label: 'Action Type', type: 'select', lookup: 'appointment_types' },
+      { name: 'doc_type', label: 'Action Type', type: 'combobox', lookup: 'appointment_types', placeholder: 'Select or type action type...' },
       { name: 'from_office', label: 'Issuing Office', placeholder: 'e.g. OVCA, OC, HRDO' },
       { name: 'doctrack_no', label: 'Doctrack No. (if any)' },
       { name: 'received_by_units', label: 'Unit Pickup Details', placeholder: 'e.g. pick up by John Ryan 04/14/2025' },
@@ -232,7 +271,7 @@ const CATEGORY_CONFIG = {
     fields: [
       { name: 'date', label: 'Issuance Date', type: 'date', defaultToday: true },
       { name: 'memo_no', label: 'CFNR Memo Number', placeholder: 'e.g. 243' },
-      { name: 'recipient', label: 'Addressed To', placeholder: 'e.g. DR. ANALYN L. CODILAN' },
+      { name: 'recipient', label: 'Addressed To', type: 'textarea', rows: 1, compact: true, placeholder: 'e.g. DR. ANALYN L. CODILAN' },
       { name: 'unit_for_oic', label: 'Unit for OIC (if applicable)', type: 'combobox', lookup: 'units', placeholder: 'Select or type unit...' },
       { name: 'description', label: 'Memorandum Subject / Text', type: 'textarea', colSpan: 2 },
       { name: 'remarks', label: 'Pickup / Transmission Remarks', type: 'textarea', colSpan: 2 }
@@ -288,6 +327,7 @@ async function initDocTraxApp() {
   if (btnNewRecord) {
     btnNewRecord.hidden = !canCurrentUserWrite();
   }
+  updateToolbarForCategory();
   await loadLookups();
   await loadStats();
   await loadDocuments();
@@ -302,13 +342,15 @@ if (window.docTraxAuth?.isAuthorized?.()) {
 function setupEventListeners() {
   // Category Navigation Tabs
   document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', (e) => {
+    tab.addEventListener('click', () => {
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       state.currentCategory = tab.dataset.category;
       state.currentPage = 1;
       state.searchQuery = '';
       document.getElementById('filter-search').value = '';
+      updateToolbarForCategory();
+      renderKpiCards();
       loadDocuments();
     });
   });
@@ -325,27 +367,19 @@ function setupEventListeners() {
     }, 250);
   });
 
-  // Filter Dropdowns
-  document.getElementById('filter-unit').addEventListener('change', (e) => {
-    state.selectedUnit = e.target.value;
-    state.currentPage = 1;
-    loadDocuments();
-  });
-
-  document.getElementById('filter-status').addEventListener('change', (e) => {
-    state.selectedStatus = e.target.value;
-    state.currentPage = 1;
-    loadDocuments();
-  });
+  // Typable Toolbar Filter Comboboxes
+  initToolbarFilters();
 
   // Reset Filters Button
   document.getElementById('btn-reset-filters').addEventListener('click', () => {
     state.searchQuery = '';
     state.selectedUnit = '';
     state.selectedStatus = '';
+    state.selectedYear = '';
     document.getElementById('filter-search').value = '';
     document.getElementById('filter-unit').value = '';
     document.getElementById('filter-status').value = '';
+    document.getElementById('filter-year').value = '';
     state.currentPage = 1;
     loadDocuments();
   });
@@ -371,8 +405,14 @@ function setupEventListeners() {
     if (state.currentPage < state.totalPages) { state.currentPage = state.totalPages; loadDocuments(); }
   });
 
-  // Export to Excel (browser-side from authenticated Supabase queries)
-  document.getElementById('btn-export-excel').addEventListener('click', handleExportExcel);
+  // Export to Excel (opens filter modal)
+  document.getElementById('btn-export-excel').addEventListener('click', openExportModal);
+  document.getElementById('form-export').addEventListener('submit', handleExportExcel);
+  document.getElementById('btn-export-clear').addEventListener('click', () => {
+    const container = document.getElementById('export-form-fields');
+    if (!container) return;
+    container.querySelectorAll('input').forEach(el => { el.value = ''; });
+  });
 
   // Log New Document
   document.getElementById('btn-new-record').addEventListener('click', () => {
@@ -415,12 +455,19 @@ async function loadLookups() {
 
     if (error) throw error;
 
+    const maxYear = Math.max(2026, new Date().getFullYear());
+    const years = [];
+    for (let y = maxYear; y >= 2025; y--) {
+      years.push(String(y));
+    }
+
     const lookups = {
       units: [],
       doc_types: [],
       statuses: [],
       appointment_types: [],
       memo_types: [],
+      years,
       couriers: [...DEFAULT_COURIERS]
     };
 
@@ -440,26 +487,6 @@ async function loadLookups() {
 
     state.lookups = lookups;
 
-    // Populate Unit Filter
-    const unitSelect = document.getElementById('filter-unit');
-    unitSelect.innerHTML = '<option value="">All Units</option>';
-    lookups.units.forEach(u => {
-      const opt = document.createElement('option');
-      opt.value = u;
-      opt.textContent = u;
-      unitSelect.appendChild(opt);
-    });
-
-    // Populate Status Filter
-    const statusSelect = document.getElementById('filter-status');
-    statusSelect.innerHTML = '<option value="">All Statuses</option>';
-    lookups.statuses.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      opt.textContent = s;
-      statusSelect.appendChild(opt);
-    });
-
     // Populate Custody Modal Courier select
     const courierSelect = document.getElementById('custody-courier-select');
     courierSelect.innerHTML = '';
@@ -472,6 +499,66 @@ async function loadLookups() {
   } catch (err) {
     handleSupabaseError(err, 'Failed to load lookup lists.');
   }
+}
+
+function updateToolbarForCategory() {
+  const statusWrapper = document.getElementById('filter-status-wrapper');
+  const hideStatus = state.currentCategory === 'cfnr_memo' || state.currentCategory === 'cfnr_ao';
+  if (statusWrapper) {
+    statusWrapper.hidden = hideStatus;
+  }
+  if (hideStatus && state.selectedStatus) {
+    state.selectedStatus = '';
+    const statusInput = document.getElementById('filter-status');
+    if (statusInput) statusInput.value = '';
+  }
+}
+
+function renderKpiCards() {
+  const label1 = document.getElementById('kpi-label-1');
+  const sub1 = document.getElementById('kpi-sub-1');
+  const label2 = document.getElementById('kpi-label-2');
+  const val2 = document.getElementById('kpi-signed');
+  const sub2 = document.getElementById('kpi-sub-2');
+  const label3 = document.getElementById('kpi-label-3');
+  const val3 = document.getElementById('kpi-pending');
+  const sub3 = document.getElementById('kpi-sub-3');
+
+  const stats = state.stats || {};
+  const counts = stats.counts || {};
+
+  if (state.currentCategory === 'memo_external') {
+    label1.textContent = 'Total Registered Transactions';
+    sub1.textContent = 'University Memos & AO';
+    label2.textContent = 'Total Number of Memoranda';
+    val2.textContent = Number(stats.memo_external_memoranda || 0).toLocaleString();
+    sub2.textContent = 'External university memoranda';
+    label3.textContent = 'Total Number of Admin Orders';
+    val3.textContent = Number(stats.memo_external_admin_orders || 0).toLocaleString();
+    sub3.textContent = 'External administrative orders';
+    return;
+  }
+
+  if (state.currentCategory === 'cfnr_memo' || state.currentCategory === 'cfnr_ao') {
+    label1.textContent = 'Total Registered Transactions';
+    sub1.textContent = state.currentCategory === 'cfnr_memo' ? 'CFNR Internal Memos' : 'CFNR Admin Orders';
+    label2.textContent = 'Total Number of Memoranda';
+    val2.textContent = Number(counts.cfnr_memo || 0).toLocaleString();
+    sub2.textContent = 'CFNR internal memoranda';
+    label3.textContent = 'Total Number of Admin Orders';
+    val3.textContent = Number(counts.cfnr_ao || 0).toLocaleString();
+    sub3.textContent = 'CFNR internal administrative orders';
+    return;
+  }
+
+  label1.textContent = 'Total Registered Transactions';
+  sub1.textContent = 'Active category total';
+  label2.textContent = 'Signed / Completed';
+  val2.textContent = Number(stats.signed_count || 0).toLocaleString();
+  sub2.textContent = 'Released or filed documents';
+  label3.textContent = 'For Review / Action';
+  val3.textContent = Number(stats.pending_count || 0).toLocaleString();
+  sub3.textContent = 'Currently pending review';
 }
 
 // Fetch operational stats & KPI counts from Supabase
@@ -495,32 +582,41 @@ async function loadStats() {
       .select('id', { count: 'exact', head: true })
       .in('status', ['FOR REVIEW', 'FOR APPROPRIATE ACTION', 'FOR COMMENTS']);
 
-    const [catResults, signedRes, pendingRes] = await Promise.all([
+    const extMemoPromise = sb
+      .from('memo_ao_external')
+      .select('id', { count: 'exact', head: true })
+      .ilike('doc_type', 'Memorandum');
+
+    const extAoPromise = sb
+      .from('memo_ao_external')
+      .select('id', { count: 'exact', head: true })
+      .ilike('doc_type', 'Admin Order');
+
+    const [catResults, signedRes, pendingRes, extMemoRes, extAoRes] = await Promise.all([
       Promise.all(countPromises),
       signedPromise,
-      pendingPromise
+      pendingPromise,
+      extMemoPromise,
+      extAoPromise
     ]);
 
     const counts = {};
-    let totalAll = 0;
     for (const { catKey, res } of catResults) {
       if (res.error) throw res.error;
-      const c = res.count || 0;
-      counts[catKey] = c;
-      totalAll += c;
+      counts[catKey] = res.count || 0;
     }
 
     if (signedRes.error) throw signedRes.error;
     if (pendingRes.error) throw pendingRes.error;
-
-    const signedCount = signedRes.count || 0;
-    const pendingCount = pendingRes.count || 0;
+    if (extMemoRes.error) throw extMemoRes.error;
+    if (extAoRes.error) throw extAoRes.error;
 
     state.stats = {
-      total_all: totalAll,
       counts,
-      signed_count: signedCount,
-      pending_count: pendingCount
+      signed_count: signedRes.count || 0,
+      pending_count: pendingRes.count || 0,
+      memo_external_memoranda: extMemoRes.count || 0,
+      memo_external_admin_orders: extAoRes.count || 0
     };
 
     Object.keys(counts).forEach(k => {
@@ -528,12 +624,26 @@ async function loadStats() {
       if (badge) badge.textContent = Number(counts[k]).toLocaleString();
     });
 
-    document.getElementById('kpi-grand-total').textContent = Number(totalAll).toLocaleString();
-    document.getElementById('kpi-signed').textContent = Number(signedCount).toLocaleString();
-    document.getElementById('kpi-pending').textContent = Number(pendingCount).toLocaleString();
+    renderKpiCards();
   } catch (err) {
     handleSupabaseError(err, 'Failed to load KPI stats.');
   }
+}
+
+function applySearchFilter(query, searchCols, rawSearch) {
+  const sanitized = (rawSearch || '').replace(/"/g, '').trim();
+  if (!sanitized || !searchCols?.length) return query;
+  const pattern = `"%${sanitized}%"`;
+  return query.or(searchCols.map(col => `${col}.ilike.${pattern}`).join(','));
+}
+
+function applyLookupOrLikeFilter(query, column, rawValue, lookupList = []) {
+  const clean = (rawValue || '').trim();
+  if (!clean || !column) return query;
+  const exactMatch = lookupList.some(item => item.toLowerCase() === clean.toLowerCase());
+  return exactMatch
+    ? query.ilike(column, clean)
+    : query.ilike(column, `%${clean}%`);
 }
 
 // Load Documents for current category, page, and filters
@@ -558,29 +668,32 @@ async function loadDocuments() {
       .from(tableName)
       .select('*', { count: 'exact' });
 
-    if (state.searchQuery) {
-      const sanitized = state.searchQuery.replace(/"/g, '').trim();
-      if (sanitized) {
-        const pattern = `"%${sanitized}%"`;
-        query = query.or(searchCols.map(col => `${col}.ilike.${pattern}`).join(','));
-      }
-    }
+    query = applySearchFilter(query, searchCols, state.searchQuery);
 
     if (state.selectedUnit) {
-      if (state.currentCategory === 'incoming_outgoing') {
-        query = query.eq('from_unit', state.selectedUnit);
-      } else if (state.currentCategory === 'personnel') {
-        query = query.eq('unit', state.selectedUnit);
-      } else if (state.currentCategory === 'cfnr_memo') {
-        query = query.eq('unit_for_oic', state.selectedUnit);
-      }
+      const unitCol = state.currentCategory === 'incoming_outgoing'
+        ? 'from_unit'
+        : state.currentCategory === 'personnel'
+          ? 'unit'
+          : state.currentCategory === 'cfnr_memo'
+            ? 'unit_for_oic'
+            : null;
+      query = applyLookupOrLikeFilter(query, unitCol, state.selectedUnit, state.lookups.units || []);
     }
 
     if (state.selectedStatus && state.currentCategory === 'incoming_outgoing') {
-      query = query.eq('status', state.selectedStatus);
+      query = applyLookupOrLikeFilter(query, 'status', state.selectedStatus, state.lookups.statuses || []);
+    }
+
+    if (state.selectedYear) {
+      const cleanYear = state.selectedYear.trim();
+      if (cleanYear) {
+        query = query.ilike('date', `%${cleanYear}%`);
+      }
     }
 
     const { data: records, count, error } = await query
+      .order('date', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false })
       .range(fromIdx, toIdx);
 
@@ -742,7 +855,8 @@ function renderTableRows(records) {
 
       } else if (col.type === 'date') {
         td.className = 'cell-date';
-        td.textContent = val || '—';
+        td.textContent = val ? formatReadableDate(val) : '—';
+        if (val) td.title = val;
 
       } else if (col.type === 'desc') {
         td.className = 'cell-desc';
@@ -772,6 +886,60 @@ function renderTableRows(records) {
 }
 
 // Modal handling
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+function parseDateParts(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  let year, month, day;
+
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
+  const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const longMatch = s.match(/^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/);
+  if (isoMatch) {
+    year = Number(isoMatch[1]);
+    month = Number(isoMatch[2]);
+    day = Number(isoMatch[3]);
+  } else if (slashMatch) {
+    month = Number(slashMatch[1]);
+    day = Number(slashMatch[2]);
+    year = Number(slashMatch[3]);
+  } else if (longMatch) {
+    const monthIdx = MONTH_NAMES.findIndex(m => m.toLowerCase() === longMatch[1].toLowerCase());
+    if (monthIdx === -1) return null;
+    month = monthIdx + 1;
+    day = Number(longMatch[2]);
+    year = Number(longMatch[3]);
+  } else {
+    return null;
+  }
+
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const check = new Date(year, month - 1, day);
+  if (check.getFullYear() !== year || check.getMonth() !== month - 1 || check.getDate() !== day) {
+    return null;
+  }
+  return { year, month, day };
+}
+
+function formatReadableDate(raw) {
+  const parts = parseDateParts(raw);
+  if (!parts) return String(raw);
+  const dd = String(parts.day).padStart(2, '0');
+  return `${dd} ${MONTH_NAMES[parts.month - 1]} ${parts.year}`;
+}
+
+function toIsoDate(raw) {
+  const parts = parseDateParts(raw);
+  if (!parts) return String(raw || '');
+  const mm = String(parts.month).padStart(2, '0');
+  const dd = String(parts.day).padStart(2, '0');
+  return `${parts.year}-${mm}-${dd}`;
+}
+
 // HTML Escaping Helper
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -783,125 +951,294 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// Initialize Comboboxes (Typable Dropdowns)
-function initComboboxes(container) {
-  container.querySelectorAll('.combobox-wrapper').forEach(wrapper => {
-    const input = wrapper.querySelector('.combobox-input');
-    const toggleBtn = wrapper.querySelector('.combobox-toggle');
-    const dropdown = wrapper.querySelector('.combobox-dropdown');
-    const fieldName = wrapper.dataset.comboboxField;
+// Shared Combobox Binding Helper (for both toolbar filters and form modals)
+function bindCombobox(wrapper, getOptions, { resetLabel = null, allowCustom = true, onValueChange = null } = {}) {
+  if (!wrapper) return;
+  const input = wrapper.querySelector('.combobox-input');
+  const toggleBtn = wrapper.querySelector('.combobox-toggle');
+  const dropdown = wrapper.querySelector('.combobox-dropdown');
+  if (!input || !toggleBtn || !dropdown) return;
 
-    const config = CATEGORY_CONFIG[state.currentCategory];
-    const fieldDef = config ? config.fields.find(f => f.name === fieldName) : null;
-    const allOptions = (fieldDef && state.lookups[fieldDef.lookup]) ? state.lookups[fieldDef.lookup] : [];
+  function renderOptions(filterText = '', showAll = false) {
+    const allOptions = getOptions() || [];
+    const cleanFilter = filterText.toLowerCase().trim();
+    const filtered = (showAll || !cleanFilter)
+      ? allOptions
+      : allOptions.filter(opt => String(opt).toLowerCase().includes(cleanFilter));
 
-    function renderOptions(filterText = '', showAll = false) {
-      const cleanFilter = filterText.toLowerCase().trim();
-      const filtered = (showAll || !cleanFilter)
-        ? allOptions
-        : allOptions.filter(opt => String(opt).toLowerCase().includes(cleanFilter));
-
-      if (filtered.length === 0) {
-        dropdown.innerHTML = `<div class="combobox-empty">Use custom: "<strong>${escapeHtml(filterText)}</strong>"</div>`;
-      } else {
-        dropdown.innerHTML = filtered.map(opt => {
-          const isSelected = String(opt).toLowerCase() === input.value.toLowerCase().trim();
-          return `<div class="combobox-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(opt)}">${escapeHtml(opt)}</div>`;
-        }).join('');
-
-        dropdown.querySelectorAll('.combobox-item').forEach(item => {
-          item.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            input.value = item.dataset.value;
-            closeDropdown();
-            input.focus();
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-          });
-        });
-      }
+    let itemsHtml = '';
+    if (resetLabel && (showAll || !cleanFilter)) {
+      const isResetSelected = !input.value.trim();
+      itemsHtml += `<div class="combobox-item ${isResetSelected ? 'selected' : ''}" data-value="">${escapeHtml(resetLabel)}</div>`;
     }
 
-    function openDropdown(showAll = false) {
-      renderOptions(input.value, showAll);
-      dropdown.style.display = 'block';
-      const sel = dropdown.querySelector('.combobox-item.selected');
-      if (sel) sel.scrollIntoView({ block: 'nearest' });
+    if (filtered.length === 0) {
+      itemsHtml += allowCustom
+        ? `<div class="combobox-empty">Use custom: "<strong>${escapeHtml(filterText)}</strong>"</div>`
+        : `<div class="combobox-empty">No matching options</div>`;
+    } else {
+      itemsHtml += filtered.map(opt => {
+        const isSelected = String(opt).toLowerCase() === input.value.toLowerCase().trim();
+        return `<div class="combobox-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(opt)}">${escapeHtml(opt)}</div>`;
+      }).join('');
     }
 
-    function closeDropdown() {
-      dropdown.style.display = 'none';
-      const active = dropdown.querySelector('.combobox-item.active');
-      if (active) active.classList.remove('active');
-    }
+    dropdown.innerHTML = itemsHtml;
 
-    toggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (dropdown.style.display === 'block') {
+    dropdown.querySelectorAll('.combobox-item').forEach(item => {
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        input.value = item.dataset.value;
         closeDropdown();
-      } else {
         input.focus();
-        openDropdown(true);
-      }
-    });
-
-    input.addEventListener('focus', () => {
-      openDropdown(true);
-    });
-
-    input.addEventListener('input', () => {
-      openDropdown(false);
-    });
-
-    input.addEventListener('blur', () => {
-      setTimeout(closeDropdown, 160);
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowDown') {
-        if (dropdown.style.display !== 'block') {
-          openDropdown();
-          return;
+        if (onValueChange) {
+          onValueChange(input.value, { immediate: true });
+        } else {
+          input.dispatchEvent(new Event('input', { bubbles: true }));
         }
+      });
+    });
+  }
+
+  const inModal = Boolean(wrapper.closest('.modal-card'));
+  const modalBody = wrapper.closest('.modal-body');
+
+  function positionFloatingDropdown() {
+    if (!inModal || dropdown.style.display !== 'block') return;
+    if (!wrapper.isConnected) {
+      closeDropdown();
+      return;
+    }
+    const rect = wrapper.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+    const openUpward = spaceBelow < 180 && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(100, Math.min(210, openUpward ? spaceAbove : spaceBelow));
+
+    dropdown.style.position = 'fixed';
+    dropdown.style.left = `${rect.left}px`;
+    dropdown.style.width = `${rect.width}px`;
+    dropdown.style.right = 'auto';
+    dropdown.style.zIndex = '1200';
+    dropdown.style.maxHeight = `${maxHeight}px`;
+
+    if (openUpward) {
+      dropdown.style.top = 'auto';
+      dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+    } else {
+      dropdown.style.bottom = 'auto';
+      dropdown.style.top = `${rect.bottom + 4}px`;
+    }
+  }
+
+  function handleScrollOrResize() {
+    closeDropdown();
+  }
+
+  function openDropdown(showAll = false) {
+    renderOptions(input.value, showAll);
+    if (inModal) {
+      if (dropdown.parentElement !== document.body) {
+        document.body.appendChild(dropdown);
+      }
+      dropdown.style.display = 'block';
+      positionFloatingDropdown();
+      if (modalBody) modalBody.addEventListener('scroll', handleScrollOrResize, { passive: true });
+      window.addEventListener('resize', handleScrollOrResize, { passive: true });
+    } else {
+      dropdown.style.display = 'block';
+    }
+    const sel = dropdown.querySelector('.combobox-item.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+
+  function closeDropdown() {
+    dropdown.style.display = 'none';
+    const active = dropdown.querySelector('.combobox-item.active');
+    if (active) active.classList.remove('active');
+    if (inModal) {
+      if (modalBody) modalBody.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
+      dropdown.style.position = '';
+      dropdown.style.left = '';
+      dropdown.style.top = '';
+      dropdown.style.bottom = '';
+      dropdown.style.width = '';
+      dropdown.style.right = '';
+      dropdown.style.zIndex = '';
+      dropdown.style.maxHeight = '';
+      if (wrapper.isConnected) {
+        wrapper.appendChild(dropdown);
+      } else {
+        dropdown.remove();
+      }
+    }
+  }
+
+  toggleBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (dropdown.style.display === 'block') {
+      closeDropdown();
+    } else {
+      input.focus();
+      openDropdown(true);
+    }
+  });
+
+  input.addEventListener('focus', () => {
+    openDropdown(true);
+  });
+
+  input.addEventListener('input', () => {
+    openDropdown(false);
+    if (onValueChange) {
+      onValueChange(input.value, { immediate: input.value.trim() === '' });
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(closeDropdown, 160);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      if (dropdown.style.display !== 'block') {
+        openDropdown(true);
+        return;
+      }
+      const items = dropdown.querySelectorAll('.combobox-item');
+      if (items.length > 0) {
+        const active = dropdown.querySelector('.combobox-item.active');
+        let nextIndex = 0;
+        if (active) {
+          active.classList.remove('active');
+          nextIndex = Array.from(items).indexOf(active) + 1;
+          if (nextIndex >= items.length) nextIndex = 0;
+        }
+        items[nextIndex].classList.add('active');
+        items[nextIndex].scrollIntoView({ block: 'nearest' });
+        e.preventDefault();
+      }
+    } else if (e.key === 'ArrowUp') {
+      if (dropdown.style.display === 'block') {
         const items = dropdown.querySelectorAll('.combobox-item');
         if (items.length > 0) {
           const active = dropdown.querySelector('.combobox-item.active');
-          let nextIndex = 0;
+          let prevIndex = items.length - 1;
           if (active) {
             active.classList.remove('active');
-            nextIndex = Array.from(items).indexOf(active) + 1;
-            if (nextIndex >= items.length) nextIndex = 0;
+            prevIndex = Array.from(items).indexOf(active) - 1;
+            if (prevIndex < 0) prevIndex = items.length - 1;
           }
-          items[nextIndex].classList.add('active');
-          items[nextIndex].scrollIntoView({ block: 'nearest' });
+          items[prevIndex].classList.add('active');
+          items[prevIndex].scrollIntoView({ block: 'nearest' });
           e.preventDefault();
         }
-      } else if (e.key === 'ArrowUp') {
-        if (dropdown.style.display === 'block') {
-          const items = dropdown.querySelectorAll('.combobox-item');
-          if (items.length > 0) {
-            const active = dropdown.querySelector('.combobox-item.active');
-            let prevIndex = items.length - 1;
-            if (active) {
-              active.classList.remove('active');
-              prevIndex = Array.from(items).indexOf(active) - 1;
-              if (prevIndex < 0) prevIndex = items.length - 1;
-            }
-            items[prevIndex].classList.add('active');
-            items[prevIndex].scrollIntoView({ block: 'nearest' });
-            e.preventDefault();
-          }
-        }
-      } else if (e.key === 'Enter') {
-        const active = dropdown.querySelector('.combobox-item.active');
-        if (active && dropdown.style.display === 'block') {
-          e.preventDefault();
-          input.value = active.dataset.value;
-          closeDropdown();
-        }
-      } else if (e.key === 'Escape') {
-        closeDropdown();
       }
-    });
+    } else if (e.key === 'Enter') {
+      const active = dropdown.querySelector('.combobox-item.active');
+      if (active && dropdown.style.display === 'block') {
+        e.preventDefault();
+        input.value = active.dataset.value;
+        closeDropdown();
+        if (onValueChange) onValueChange(input.value, { immediate: true });
+      } else if (onValueChange) {
+        e.preventDefault();
+        closeDropdown();
+        onValueChange(input.value, { immediate: true });
+      }
+    } else if (e.key === 'Escape') {
+      closeDropdown();
+    }
+  });
+}
+
+function initToolbarFilters() {
+  let unitTimer;
+  bindCombobox(
+    document.getElementById('filter-unit-wrapper'),
+    () => state.lookups.units,
+    {
+      resetLabel: 'All Units',
+      onValueChange: (val, { immediate }) => {
+        clearTimeout(unitTimer);
+        const apply = () => {
+          state.selectedUnit = val.trim();
+          state.currentPage = 1;
+          loadDocuments();
+        };
+        if (immediate) apply();
+        else unitTimer = setTimeout(apply, 250);
+      }
+    }
+  );
+
+  let statusTimer;
+  bindCombobox(
+    document.getElementById('filter-status-wrapper'),
+    () => state.lookups.statuses,
+    {
+      resetLabel: 'All Statuses',
+      onValueChange: (val, { immediate }) => {
+        clearTimeout(statusTimer);
+        const apply = () => {
+          state.selectedStatus = val.trim();
+          state.currentPage = 1;
+          loadDocuments();
+        };
+        if (immediate) apply();
+        else statusTimer = setTimeout(apply, 250);
+      }
+    }
+  );
+
+  let yearTimer;
+  bindCombobox(
+    document.getElementById('filter-year-wrapper'),
+    () => state.lookups.years,
+    {
+      resetLabel: 'All Years',
+      onValueChange: (val, { immediate }) => {
+        clearTimeout(yearTimer);
+        const trimmed = val.trim();
+        const apply = () => {
+          state.selectedYear = trimmed;
+          state.currentPage = 1;
+          loadDocuments();
+        };
+        if (immediate || trimmed === '' || /^\d{4}$/.test(trimmed)) {
+          apply();
+        } else {
+          yearTimer = setTimeout(apply, 350);
+        }
+      }
+    }
+  );
+}
+
+function renderComboboxFieldHtml(name, value = '', placeholder = '') {
+  return `
+    <div class="combobox-wrapper" data-combobox-field="${name}">
+      <input type="text"
+             name="${name}"
+             class="input-text combobox-input"
+             value="${escapeHtml(value)}"
+             placeholder="${escapeHtml(placeholder)}"
+             autocomplete="off">
+      <button type="button" class="combobox-toggle" tabindex="-1" title="Show suggestions">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+      <div class="combobox-dropdown" style="display: none;"></div>
+    </div>`;
+}
+
+// Initialize Comboboxes inside dynamic form modals
+function initComboboxes(container, fieldsDef = null) {
+  const fields = fieldsDef || (CATEGORY_CONFIG[state.currentCategory]?.fields || []);
+  container.querySelectorAll('.combobox-wrapper').forEach(wrapper => {
+    const fieldName = wrapper.dataset.comboboxField;
+    const fieldDef = fields.find(f => f.name === fieldName);
+    bindCombobox(wrapper, () => (fieldDef && state.lookups[fieldDef.lookup]) ? state.lookups[fieldDef.lookup] : []);
   });
 }
 
@@ -921,6 +1258,9 @@ function openDocumentModal(record = null, isClone = false) {
     let val = '';
     if (record && record[f.name] !== undefined) {
       val = record[f.name] || '';
+      if (f.type === 'date' && val) {
+        val = toIsoDate(val);
+      }
     } else if (f.defaultToday) {
       val = new Date().toISOString().split('T')[0];
     }
@@ -929,19 +1269,7 @@ function openDocumentModal(record = null, isClone = false) {
     html += `<label class="form-label">${f.label}</label>`;
 
     if (f.type === 'combobox') {
-      html += `
-        <div class="combobox-wrapper" data-combobox-field="${f.name}">
-          <input type="text" 
-                 name="${f.name}" 
-                 class="input-text combobox-input" 
-                 value="${escapeHtml(val)}" 
-                 placeholder="${f.placeholder || 'Type or select ' + f.label + '...'}" 
-                 autocomplete="off">
-          <button type="button" class="combobox-toggle" tabindex="-1" title="Show suggestions">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </button>
-          <div class="combobox-dropdown" style="display: none;"></div>
-        </div>`;
+      html += renderComboboxFieldHtml(f.name, val, f.placeholder || `Type or select ${f.label}...`);
     } else if (f.type === 'select') {
       const options = state.lookups[f.lookup] || [];
       html += `<select name="${f.name}" class="select-control">`;
@@ -952,7 +1280,8 @@ function openDocumentModal(record = null, isClone = false) {
       });
       html += `</select>`;
     } else if (f.type === 'textarea') {
-      html += `<textarea name="${f.name}" rows="2" class="input-text" placeholder="${f.placeholder || ''}">${escapeHtml(val)}</textarea>`;
+      const compactClass = f.compact ? ' textarea-compact' : '';
+      html += `<textarea name="${f.name}" rows="${f.rows || 3}" class="input-text${compactClass}" placeholder="${f.placeholder || ''}">${escapeHtml(val)}</textarea>`;
     } else {
       html += `<input type="${f.type || 'text'}" name="${f.name}" class="input-text" value="${escapeHtml(val)}" placeholder="${f.placeholder || ''}">`;
     }
@@ -964,9 +1293,21 @@ function openDocumentModal(record = null, isClone = false) {
   fieldsContainer.innerHTML = html;
   initComboboxes(fieldsContainer);
   modal.classList.add('open');
+
+  const autoResize = el => {
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  };
+  fieldsContainer.querySelectorAll('textarea').forEach(ta => {
+    ta.addEventListener('input', () => autoResize(ta));
+    requestAnimationFrame(() => autoResize(ta));
+  });
 }
 
 function closeModal(modalId) {
+  document.querySelectorAll('body > .combobox-dropdown').forEach(dd => {
+    dd.style.display = 'none';
+  });
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.remove('open');
 }
@@ -1101,16 +1442,129 @@ async function handleApplyCustodyStamp() {
   }
 }
 
-// Browser-side Excel (.xlsx) Export from authenticated Supabase queries
-async function fetchAllRowsForExport(sb, table, columns) {
+// Browser-side Excel (.xlsx) Export Modal & Filtered Queries
+function openExportModal() {
+  const modal = document.getElementById('modal-export');
+  const title = document.getElementById('modal-export-title');
+  const fieldsContainer = document.getElementById('export-form-fields');
+  const cat = state.currentCategory;
+  const config = CATEGORY_CONFIG[cat];
+  const tabFilters = EXPORT_TAB_FILTERS[cat] || [];
+
+  title.textContent = `Export Excel — ${config.title}`;
+
+  const comboboxDefs = [
+    { name: 'year', lookup: 'years' },
+    ...tabFilters.filter(f => f.type === 'combobox')
+  ];
+
+  let html = '<div class="form-grid">';
+  html += `
+    <div class="form-group col-span-2">
+      <label class="form-label">Export Scope</label>
+      <select name="scope" id="export-scope" class="select-control">
+        <option value="current" selected>Current Tab: ${escapeHtml(config.title)}</option>
+        <option value="all">All Document Logs (Multi-Sheet Workbook)</option>
+      </select>
+    </div>
+
+    <div class="form-section-heading">Date &amp; Year Filters</div>
+
+    <div class="form-group">
+      <label class="form-label">Year</label>
+      ${renderComboboxFieldHtml('year', state.selectedYear || '', 'All Years (e.g. 2026)')}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Keyword Search</label>
+      <input type="text" name="search" class="input-text" value="${escapeHtml(state.searchQuery || '')}" placeholder="Doctrax #, name, keyword...">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date From</label>
+      <input type="date" name="dateFrom" class="input-text">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Date To</label>
+      <input type="date" name="dateTo" class="input-text">
+    </div>
+  `;
+
+  if (tabFilters.length > 0) {
+    html += `<div id="export-tab-filters-section" class="col-span-2 form-grid">`;
+    html += `<div class="form-section-heading">${escapeHtml(config.title)} Filters</div>`;
+    tabFilters.forEach(f => {
+      const initialVal = f.fromState ? (state[f.fromState] || '') : '';
+      html += `<div class="form-group">`;
+      html += `<label class="form-label">${escapeHtml(f.label)}</label>`;
+      if (f.type === 'combobox') {
+        html += renderComboboxFieldHtml(f.name, initialVal, f.placeholder || `Type or select ${f.label}...`);
+      } else {
+        html += `<input type="text" name="${f.name}" class="input-text" value="${escapeHtml(initialVal)}" placeholder="${escapeHtml(f.placeholder || '')}">`;
+      }
+      html += `</div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `
+    <div id="export-all-tabs-hint" class="export-tab-hint col-span-2" hidden>
+      Tab-specific filters only apply to <strong>Current Tab</strong> export. Year, Date Range, and Keyword filters will apply across all sheets.
+    </div>
+  `;
+  html += '</div>';
+
+  fieldsContainer.innerHTML = html;
+  initComboboxes(fieldsContainer, comboboxDefs);
+
+  const scopeSelect = document.getElementById('export-scope');
+  const tabSection = document.getElementById('export-tab-filters-section');
+  const allHint = document.getElementById('export-all-tabs-hint');
+  if (scopeSelect) {
+    scopeSelect.addEventListener('change', () => {
+      const isAll = scopeSelect.value === 'all';
+      if (tabSection) tabSection.hidden = isAll;
+      if (allHint) allHint.hidden = !isAll;
+    });
+  }
+
+  modal.classList.add('open');
+}
+
+async function fetchAllRowsForExport(sb, sheetDef, filterCriteria = {}) {
   const pageSize = 1000;
   let offset = 0;
   const allRows = [];
 
+  const tabFilters = EXPORT_TAB_FILTERS[sheetDef.category] || [];
+  const searchCols = SEARCH_COLS[sheetDef.category] || [];
+
   while (true) {
-    const { data, error } = await sb
-      .from(table)
-      .select(columns.join(','))
+    let query = sb
+      .from(sheetDef.table)
+      .select(sheetDef.columns.join(','));
+
+    if (filterCriteria.year) {
+      query = query.ilike('date', `%${filterCriteria.year}%`);
+    }
+
+    if (filterCriteria.search) {
+      query = applySearchFilter(query, searchCols, filterCriteria.search);
+    }
+
+    if (filterCriteria.scope === 'current' && filterCriteria.tabValues) {
+      tabFilters.forEach(f => {
+        const val = filterCriteria.tabValues[f.name];
+        if (val) {
+          const list = f.lookup ? (state.lookups[f.lookup] || []) : [];
+          query = applyLookupOrLikeFilter(query, f.name, val, list);
+        }
+      });
+    }
+
+    const { data, error } = await query
+      .order('date', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
@@ -1121,23 +1575,62 @@ async function fetchAllRowsForExport(sb, table, columns) {
     offset += pageSize;
   }
 
+  const { dateFrom, dateTo } = filterCriteria;
+  if (dateFrom || dateTo) {
+    return allRows.filter(rec => {
+      if (!parseDateParts(rec.date)) return false;
+      const iso = toIsoDate(rec.date);
+      if (dateFrom && iso < dateFrom) return false;
+      if (dateTo && iso > dateTo) return false;
+      return true;
+    });
+  }
+
   return allRows;
 }
 
-async function handleExportExcel() {
+async function handleExportExcel(e) {
+  e.preventDefault();
   const sb = getSupabaseClient();
   if (!sb) return;
 
-  const btn = document.getElementById('btn-export-excel');
-  if (btn) btn.disabled = true;
+  const formData = new FormData(e.target);
+  const scope = (formData.get('scope') || 'current').toString();
+  const year = (formData.get('year') || '').toString().trim();
+  const search = (formData.get('search') || '').toString().trim();
+  const dateFrom = (formData.get('dateFrom') || '').toString().trim();
+  const dateTo = (formData.get('dateTo') || '').toString().trim();
+
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    showToast('Date From cannot be later than Date To.', 'error');
+    return;
+  }
+
+  const tabValues = {};
+  (EXPORT_TAB_FILTERS[state.currentCategory] || []).forEach(f => {
+    const val = (formData.get(f.name) || '').toString().trim();
+    if (val) tabValues[f.name] = val;
+  });
+
+  const filterCriteria = { scope, year, search, dateFrom, dateTo, tabValues };
+  const sheetsToExport = scope === 'all'
+    ? EXCEL_SHEETS
+    : EXCEL_SHEETS.filter(s => s.category === state.currentCategory);
+
+  const btnConfirm = document.getElementById('btn-confirm-export');
+  const btnToolbar = document.getElementById('btn-export-excel');
+  if (btnConfirm) btnConfirm.disabled = true;
+  if (btnToolbar) btnToolbar.disabled = true;
   showToast('Fetching records & building Excel workbook...', 'info');
 
   try {
     const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs');
     const wb = XLSX.utils.book_new();
+    let totalExported = 0;
 
-    for (const sheetDef of EXCEL_SHEETS) {
-      const rows = await fetchAllRowsForExport(sb, sheetDef.table, sheetDef.columns);
+    for (const sheetDef of sheetsToExport) {
+      const rows = await fetchAllRowsForExport(sb, sheetDef, filterCriteria);
+      totalExported += rows.length;
       const aoa = [
         sheetDef.headers,
         ...rows.map(rec => sheetDef.columns.map(col => rec[col] ?? ''))
@@ -1153,15 +1646,23 @@ async function handleExportExcel() {
       XLSX.utils.book_append_sheet(wb, ws, sheetDef.title);
     }
 
+    if (totalExported === 0) {
+      showToast('No matching records found for the selected filters.', 'error');
+      return;
+    }
+
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
     const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    XLSX.writeFile(wb, `DOCTRAX_EXPORT_${stamp}.xlsx`);
-    showToast('Excel workbook downloaded!', 'success');
+    const prefix = scope === 'all' ? 'DOCTRAX_EXPORT' : `DOCTRAX_${state.currentCategory.toUpperCase()}`;
+    XLSX.writeFile(wb, `${prefix}_${stamp}.xlsx`);
+    closeModal('modal-export');
+    showToast(`Exported ${totalExported.toLocaleString()} record(s) to Excel!`, 'success');
   } catch (err) {
     handleSupabaseError(err, 'Failed to export Excel workbook.');
   } finally {
-    if (btn) btn.disabled = false;
+    if (btnConfirm) btnConfirm.disabled = false;
+    if (btnToolbar) btnToolbar.disabled = false;
   }
 }
 
